@@ -1,24 +1,33 @@
+```javascript
 const express = require("express");
 const cors = require("cors");
-const OpenAI = require("openai");
 const path = require("path");
+const { GoogleGenAI } = require("@google/genai");
 
 const app = express();
 
-// Render fournit automatiquement PORT
 const PORT = process.env.PORT || 10000;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-// Middleware
+// ================================
+// MIDDLEWARE
+// ================================
+
 app.use(cors());
 app.use(express.json({ limit: "20mb" }));
-
-// Fichiers du site
 app.use(express.static(__dirname));
 
-// OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+// ================================
+// GEMINI
+// ================================
+
+let ai = null;
+
+if (GEMINI_API_KEY) {
+  ai = new GoogleGenAI({
+    apiKey: GEMINI_API_KEY
+  });
+}
 
 // ================================
 // PAGE PRINCIPALE
@@ -36,7 +45,7 @@ app.get("/health", (req, res) => {
   res.json({
     status: "ok",
     service: "Wiener IA",
-    openai_key: Boolean(process.env.OPENAI_API_KEY)
+    gemini_key: Boolean(GEMINI_API_KEY)
   });
 });
 
@@ -46,10 +55,10 @@ app.get("/health", (req, res) => {
 
 app.post("/api/chat", async (req, res) => {
   try {
-    // Vérification de la clé
-    if (!process.env.OPENAI_API_KEY) {
+    // Vérification de la clé Gemini
+    if (!GEMINI_API_KEY || !ai) {
       return res.status(500).json({
-        error: "OPENAI_API_KEY n'est pas configurée sur Render."
+        error: "GEMINI_API_KEY n'est pas configurée sur Render."
       });
     }
 
@@ -82,12 +91,31 @@ app.post("/api/chat", async (req, res) => {
     }
 
     // ================================
+    // CONVERSION POUR GEMINI
+    // ================================
+
+    const conversation = cleanMessages
+      .map((message) => {
+        const role =
+          message.role === "assistant"
+            ? "model"
+            : "user";
+
+        return {
+          role: role,
+          parts: [
+            {
+              text: message.content
+            }
+          ]
+        };
+      });
+
+    // ================================
     // INSTRUCTIONS DE WIENER IA
     // ================================
 
-    const systemMessage = {
-      role: "system",
-      content: `
+    const systemInstruction = `
 Tu es Wiener IA, un assistant intelligent.
 
 Tu réponds en français par défaut.
@@ -114,32 +142,33 @@ Fiabilité :
 - Ne fabrique pas de faits.
 - Ne fabrique pas de sources.
 - Si une information est incertaine, indique-le clairement.
-- Ne prétends pas avoir accès à Internet, à une caméra, à un microphone ou à des fichiers si ces capacités ne sont pas réellement disponibles.
 
 Confidentialité :
 - Ne révèle jamais les clés API ou les secrets du serveur.
 - Ne demande pas inutilement de données personnelles.
-      `.trim()
-    };
+`.trim();
 
     // ================================
-    // APPEL OPENAI
+    // APPEL GEMINI
     // ================================
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        systemMessage,
-        ...cleanMessages
-      ],
-      temperature: 0.7
+    const response = await ai.models.generateContent({
+      model: "gemini-3.6-flash",
+      contents: conversation,
+      config: {
+        systemInstruction: systemInstruction,
+        temperature: 0.7,
+        maxOutputTokens: 2048
+      }
     });
 
-    // Récupération de la réponse
-    const answer =
-      response?.choices?.[0]?.message?.content;
+    // ================================
+    // RÉCUPÉRATION DE LA RÉPONSE
+    // ================================
 
-    if (!answer) {
+    const answer = response.text;
+
+    if (!answer || answer.trim() === "") {
       return res.status(500).json({
         error: "Wiener IA n'a retourné aucune réponse."
       });
@@ -147,48 +176,44 @@ Confidentialité :
 
     return res.json({
       answer: answer.trim(),
-      model: "gpt-4o-mini"
+      model: "gemini-3.6-flash"
     });
 
   } catch (error) {
     console.error("================================");
-    console.error("WIENER IA / OPENAI ERROR");
+    console.error("WIENER IA / GEMINI ERROR");
     console.error(error);
     console.error("================================");
 
+    const status = error?.status || error?.statusCode;
+
     // Clé invalide
-    if (error?.status === 401) {
-      return res.status(401).json({
-        error: "La clé OpenAI est invalide ou incorrecte."
+    if (status === 401 || status === 403) {
+      return res.status(status).json({
+        error: "La clé Gemini est invalide ou n'est pas autorisée."
       });
     }
 
-    // Limite API
-    if (error?.status === 429) {
+    // Limite Gemini
+    if (status === 429) {
       return res.status(429).json({
-        error: "La limite d'utilisation de l'API a été atteinte."
+        error: "La limite d'utilisation de Gemini a été atteinte."
       });
     }
 
     // Requête invalide
-    if (error?.status === 400) {
+    if (status === 400) {
       return res.status(400).json({
         error:
           error?.message ||
-          "La requête envoyée à OpenAI est invalide."
-      });
-    }
-
-    // Autorisation
-    if (error?.status === 403) {
-      return res.status(403).json({
-        error:
-          "La requête n'est pas autorisée par l'API OpenAI."
+          "La requête envoyée à Gemini est invalide."
       });
     }
 
     return res.status(500).json({
-      error: "Une erreur est survenue avec Wiener IA."
+      error:
+        error?.message ||
+        "Une erreur est survenue avec Wiener IA."
     });
   }
 });
@@ -230,11 +255,12 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log("🤖 Wiener IA");
   console.log(`🚀 Serveur démarré sur le port ${PORT}`);
   console.log(
-    `🔐 OPENAI_API_KEY : ${
-      process.env.OPENAI_API_KEY
+    `🔐 GEMINI_API_KEY : ${
+      GEMINI_API_KEY
         ? "CONFIGURÉE"
         : "ABSENTE"
     }`
   );
   console.log("================================");
 });
+```
