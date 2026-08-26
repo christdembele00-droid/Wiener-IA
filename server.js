@@ -1,4 +1,3 @@
-```javascript
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
@@ -55,7 +54,6 @@ app.get("/health", (req, res) => {
 
 app.post("/api/chat", async (req, res) => {
   try {
-    // Vérification de la clé Gemini
     if (!GEMINI_API_KEY || !ai) {
       return res.status(500).json({
         error: "GEMINI_API_KEY n'est pas configurée sur Render."
@@ -64,14 +62,12 @@ app.post("/api/chat", async (req, res) => {
 
     const { messages } = req.body;
 
-    // Vérification des messages
     if (!Array.isArray(messages) || messages.length === 0) {
       return res.status(400).json({
         error: "Aucun message reçu."
       });
     }
 
-    // Nettoyage des messages
     const cleanMessages = messages
       .filter((message) => {
         return (
@@ -79,7 +75,7 @@ app.post("/api/chat", async (req, res) => {
           (message.role === "user" ||
             message.role === "assistant") &&
           typeof message.content === "string" &&
-          message.content.trim().length > 0
+          message.content.trim() !== ""
         );
       })
       .slice(-40);
@@ -90,30 +86,15 @@ app.post("/api/chat", async (req, res) => {
       });
     }
 
-    // ================================
-    // CONVERSION POUR GEMINI
-    // ================================
-
-    const conversation = cleanMessages
-      .map((message) => {
-        const role =
-          message.role === "assistant"
-            ? "model"
-            : "user";
-
-        return {
-          role: role,
-          parts: [
-            {
-              text: message.content
-            }
-          ]
-        };
-      });
-
-    // ================================
-    // INSTRUCTIONS DE WIENER IA
-    // ================================
+    // Gemini utilise "model" au lieu de "assistant"
+    const conversation = cleanMessages.map((message) => ({
+      role: message.role === "assistant" ? "model" : "user",
+      parts: [
+        {
+          text: message.content
+        }
+      ]
+    }));
 
     const systemInstruction = `
 Tu es Wiener IA, un assistant intelligent.
@@ -125,7 +106,7 @@ Règles générales :
 - Réponds directement à la question.
 - Structure les réponses longues avec des titres et des listes.
 - Utilise Markdown lorsque cela améliore la lisibilité.
-- Si l'utilisateur utilise une autre langue, réponds dans cette langue si nécessaire.
+- Si l'utilisateur utilise une autre langue, réponds dans cette langue.
 
 Éducation :
 - Pour les exercices scolaires, explique le raisonnement étape par étape.
@@ -144,16 +125,12 @@ Fiabilité :
 - Si une information est incertaine, indique-le clairement.
 
 Confidentialité :
-- Ne révèle jamais les clés API ou les secrets du serveur.
-- Ne demande pas inutilement de données personnelles.
+- Ne révèle jamais les clés API.
+- Ne révèle jamais les secrets du serveur.
 `.trim();
 
-    // ================================
-    // APPEL GEMINI
-    // ================================
-
     const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
+      model: "gemini-2.5-flash",
       contents: conversation,
       config: {
         systemInstruction: systemInstruction,
@@ -161,10 +138,6 @@ Confidentialité :
         maxOutputTokens: 2048
       }
     });
-
-    // ================================
-    // RÉCUPÉRATION DE LA RÉPONSE
-    // ================================
 
     const answer = response.text;
 
@@ -176,7 +149,7 @@ Confidentialité :
 
     return res.json({
       answer: answer.trim(),
-      model: "gemini-3.6-flash"
+      model: "gemini-2.5-flash"
     });
 
   } catch (error) {
@@ -187,21 +160,18 @@ Confidentialité :
 
     const status = error?.status || error?.statusCode;
 
-    // Clé invalide
     if (status === 401 || status === 403) {
       return res.status(status).json({
         error: "La clé Gemini est invalide ou n'est pas autorisée."
       });
     }
 
-    // Limite Gemini
     if (status === 429) {
       return res.status(429).json({
         error: "La limite d'utilisation de Gemini a été atteinte."
       });
     }
 
-    // Requête invalide
     if (status === 400) {
       return res.status(400).json({
         error:
@@ -256,11 +226,8 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Serveur démarré sur le port ${PORT}`);
   console.log(
     `🔐 GEMINI_API_KEY : ${
-      GEMINI_API_KEY
-        ? "CONFIGURÉE"
-        : "ABSENTE"
+      GEMINI_API_KEY ? "CONFIGURÉE" : "ABSENTE"
     }`
   );
   console.log("================================");
 });
-```
