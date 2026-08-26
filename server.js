@@ -224,10 +224,3 @@ app.use((error, req, res, next) => {
 // ================================
 // DÉMARRAGE
 // ================================
-
-==> Running 'node server.js'
-🤖 Wiener IA
-🚀 Serveur démarré sur le port 10000
-🔐 OPENAI_API_KEY : CONFIGURÉE
-  console.log("================================");
-});
