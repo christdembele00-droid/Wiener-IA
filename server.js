@@ -224,3 +224,17 @@ app.use((error, req, res, next) => {
 // ================================
 // DÉMARRAGE
 // ================================
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log("================================");
+  console.log("🤖 Wiener IA");
+  console.log(`🚀 Serveur démarré sur le port ${PORT}`);
+  console.log(
+    `🔐 OPENAI_API_KEY : ${
+      process.env.OPENAI_API_KEY
+        ? "CONFIGURÉE"
+        : "ABSENTE"
+    }`
+  );
+  console.log("================================");
+});
