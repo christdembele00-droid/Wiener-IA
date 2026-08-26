@@ -1,7 +1,9 @@
+
+```json
 {
   "name": "wiener-ia",
   "version": "1.0.0",
-  "description": "Assistant intelligent Wiener IA",
+  "description": "Wiener IA - assistant intelligent",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -12,3 +14,4 @@
     "openai": "^4.104.0"
   }
 }
+```
