@@ -1,21 +1,41 @@
-```javascript
+"use strict";
+
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const os = require("os");
 const fs = require("fs/promises");
-const { GoogleGenAI } = require("@google/genai");
+const crypto = require("crypto");
+
+const {
+  GoogleGenAI,
+  createUserContent,
+  createPartFromUri
+} = require("@google/genai");
 
 const app = express();
 
-const PORT = process.env.PORT || 10000;
+/* =========================================================
+   CONFIGURATION
+========================================================= */
+
+const PORT = Number(process.env.PORT) || 10000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-const TEXT_MODEL = "gemini-3.6-flash";
-const IMAGE_MODEL = "gemini-3.1-flash-image";
+const TEXT_MODEL =
+  process.env.GEMINI_TEXT_MODEL || "gemini-3.6-flash";
 
-const MAX_BODY_SIZE = "30mb";
+const IMAGE_MODEL =
+  process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image";
+
+const MAX_JSON_SIZE = "35mb";
 const MAX_FILE_SIZE = 30 * 1024 * 1024;
+const MAX_MESSAGES = 30;
+const MAX_MESSAGE_LENGTH = 20000;
+
+/* =========================================================
+   GEMINI
+========================================================= */
 
 let ai = null;
 
@@ -26,74 +46,156 @@ if (GEMINI_API_KEY) {
 }
 
 /* =========================================================
-   WIENER IA — INSTRUCTIONS
+   EXPRESS
 ========================================================= */
 
-const WIENER_INSTRUCTIONS = `
-Tu es Wiener IA, un assistant intelligent, rapide, précis et pédagogique.
+app.disable("x-powered-by");
 
-LANGUE
-- Réponds en français par défaut.
-- Si l'utilisateur écrit dans une autre langue, réponds dans cette langue.
-- Adapte ton vocabulaire au niveau de l'utilisateur.
-
-QUALITÉ DES RÉPONSES
-- Comprends d'abord précisément la demande.
-- Réponds directement sans longue introduction inutile.
-- Ne répète pas la question.
-- Donne les informations réellement utiles.
-- Si plusieurs interprétations sont possibles, indique brièvement celle que tu retiens.
-- Ne fabrique jamais une information.
-- Si tu n'es pas certain, dis-le clairement.
-- Ne fabrique jamais de source ou de citation.
-
-ÉDUCATION
-- Explique les exercices étape par étape.
-- En mathématiques : formule, remplacement des données, calcul, résultat.
-- En physique : données, formule, unités, application numérique, résultat.
-- En chimie : équations, formules, calculs et interprétation.
-- En SVT/biologie : explique les mécanismes de manière structurée.
-- Adapte les explications au niveau scolaire.
-
-PROGRAMMATION
-- Donne du code directement utilisable.
-- Explique uniquement les parties importantes.
-- Signale les erreurs probables.
-- Ne prétends jamais avoir exécuté un code si tu ne l'as pas réellement exécuté.
-
-RECHERCHE
-- Pour les informations récentes ou susceptibles d'avoir changé, utilise la recherche Web lorsqu'elle est disponible.
-- Distingue les faits vérifiés des informations incertaines.
-- Donne les sources importantes lorsque la recherche en fournit.
-
-STYLE
-- Sois naturel.
-- Évite les phrases répétitives.
-- Utilise Markdown lorsque cela améliore la lisibilité.
-- Utilise des titres courts pour les réponses longues.
-- Ne surcharge pas chaque réponse avec des listes.
-- Donne une réponse concise lorsque la question est simple.
-- Donne une réponse détaillée lorsque la question nécessite une explication.
-
-CONFIDENTIALITÉ
-- Ne révèle jamais la clé API.
-- Ne révèle jamais les secrets ou variables d'environnement du serveur.
-- Ne demande pas inutilement de données personnelles.
-`.trim();
-
-/* =========================================================
-   MIDDLEWARE
-========================================================= */
-
-app.use(cors());
+app.use(
+  cors({
+    origin: true,
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type"]
+  })
+);
 
 app.use(
   express.json({
-    limit: MAX_BODY_SIZE
+    limit: MAX_JSON_SIZE
   })
 );
 
 app.use(express.static(__dirname));
+
+/* =========================================================
+   INSTRUCTIONS PRINCIPALES DE WIENER IA
+========================================================= */
+
+const WIENER_INSTRUCTIONS = `
+Tu es Wiener IA, un assistant généraliste intelligent, rapide,
+précis, pédagogique et naturel.
+
+IDENTITÉ
+- Ton nom est Wiener IA.
+- Tu réponds en français par défaut.
+- Si l'utilisateur écrit principalement dans une autre langue,
+  réponds dans cette langue.
+- Ne prétends jamais être un humain.
+- Ne prétends jamais avoir exécuté une action que tu n'as pas exécutée.
+
+STYLE
+- Comprends d'abord exactement la demande.
+- Réponds directement sans introduction inutile.
+- Sois naturel et conversationnel.
+- Évite les répétitions.
+- Ne transforme pas une question simple en réponse inutilement longue.
+- Pour une question complexe, structure avec des titres et des listes.
+- Utilise Markdown lorsque cela améliore vraiment la lisibilité.
+- Donne les informations importantes en premier.
+
+PERTINENCE
+- Réponds précisément à la question posée.
+- Ne pars pas sur un sujet différent.
+- Si plusieurs interprétations sont possibles, indique brièvement
+  l'interprétation retenue.
+- Si une information manque réellement pour répondre correctement,
+  pose une question courte et précise.
+- Ne remplis pas la réponse avec des généralités.
+
+FIABILITÉ
+- Ne fabrique jamais de faits.
+- Ne fabrique jamais de sources.
+- Ne présente pas une hypothèse comme une certitude.
+- Pour les informations susceptibles d'avoir changé récemment,
+  utilise la recherche Web lorsqu'elle est disponible.
+- Si tu n'es pas certain, dis-le clairement.
+
+ÉDUCATION
+- Adapte le niveau à l'utilisateur.
+- Pour un exercice, commence par identifier les données.
+- Explique la méthode avant les calculs importants.
+- Montre les calculs étape par étape.
+- Termine par une réponse clairement identifiable.
+- En mathématiques, vérifie les signes, unités et résultats.
+- En physique, donne les formules et les unités.
+- En chimie, donne les équations et explique les transformations.
+- En biologie, explique les mécanismes avec un vocabulaire adapté.
+- Ne saute pas une étape essentielle simplement pour être bref.
+
+PROGRAMMATION
+- Donne du code directement utilisable.
+- Respecte le langage demandé.
+- Explique brièvement les modifications importantes.
+- Ne prétends pas avoir testé un code si tu ne l'as pas réellement testé.
+- Lorsque plusieurs solutions existent, privilégie la plus simple,
+  robuste et maintenable.
+
+RECHERCHE WEB
+- Lorsque des outils de recherche sont disponibles, utilise-les
+  pour les informations récentes, les actualités, les prix,
+  les calendriers, les personnes ou services actuels et autres
+  informations susceptibles d'avoir changé.
+- Distingue clairement les faits trouvés des déductions.
+
+CONFIDENTIALITÉ
+- Ne révèle jamais les clés API, tokens, variables secrètes,
+  identifiants privés ou secrets du serveur.
+- Ne demande pas de données personnelles lorsqu'elles ne sont
+  pas nécessaires.
+
+RÉPONSES
+- Priorité absolue : exactitude, pertinence, clarté et utilité.
+- Une bonne réponse doit résoudre le problème de l'utilisateur,
+  pas seulement parler du problème.
+`.trim();
+
+/* =========================================================
+   INSTRUCTIONS SPÉCIFIQUES
+========================================================= */
+
+const EXERCISE_INSTRUCTIONS = `
+Tu es le moteur de résolution d'exercices de Wiener IA.
+
+Résous l'exercice avec rigueur.
+
+Méthode :
+1. Identifier précisément ce qui est demandé.
+2. Extraire les données utiles.
+3. Donner la formule, règle ou propriété utilisée.
+4. Effectuer les calculs étape par étape.
+5. Vérifier la cohérence du résultat.
+6. Donner la réponse finale clairement.
+
+Important :
+- Ne saute pas les calculs importants.
+- Ne crée aucune donnée absente de l'énoncé.
+- Si l'énoncé est ambigu, indique exactement ce qui manque.
+- Adapte le niveau d'explication au niveau scolaire fourni.
+`.trim();
+
+const FILE_INSTRUCTIONS = `
+Tu es le moteur d'analyse de documents de Wiener IA.
+
+Analyse le fichier fourni et réponds à la demande de l'utilisateur.
+
+Si c'est un exercice :
+- lis précisément l'énoncé ;
+- identifie les données ;
+- résous étape par étape ;
+- donne la réponse finale.
+
+Si c'est un document :
+- identifie les informations importantes ;
+- résume sans déformer ;
+- explique les passages difficiles.
+
+Si c'est une image :
+- lis le texte visible lorsque nécessaire ;
+- décris uniquement les éléments utiles à la question.
+
+Ne prétends jamais voir une information qui n'est pas réellement
+présente dans le fichier.
+`.trim();
 
 /* =========================================================
    UTILITAIRES
@@ -114,25 +216,52 @@ function requireGemini(res) {
 
 function getErrorStatus(error) {
   return (
-    error?.status ||
-    error?.statusCode ||
-    error?.response?.status ||
+    Number(error?.status) ||
+    Number(error?.statusCode) ||
+    Number(error?.response?.status) ||
     500
   );
 }
 
+function getErrorMessage(error) {
+  if (!error) {
+    return "Erreur inconnue.";
+  }
+
+  if (typeof error.message === "string" && error.message.trim()) {
+    return error.message.trim();
+  }
+
+  return "Une erreur est survenue avec Gemini.";
+}
+
 function sendGeminiError(res, error) {
-  console.error("================================");
+  console.error("======================================");
   console.error("WIENER IA / GEMINI ERROR");
   console.error(error);
-  console.error("================================");
+  console.error("======================================");
 
   const status = getErrorStatus(error);
+
+  if (status === 400) {
+    return res.status(400).json({
+      error:
+        getErrorMessage(error) ||
+        "La requête envoyée à Gemini est invalide."
+    });
+  }
 
   if (status === 401 || status === 403) {
     return res.status(status).json({
       error:
-        "La clé Gemini est invalide ou n'est pas autorisée."
+        "La clé Gemini est invalide, absente ou non autorisée."
+    });
+  }
+
+  if (status === 404) {
+    return res.status(404).json({
+      error:
+        "Le modèle ou la ressource Gemini demandée est introuvable."
     });
   }
 
@@ -143,20 +272,23 @@ function sendGeminiError(res, error) {
     });
   }
 
-  if (status === 400) {
-    return res.status(400).json({
+  if (status === 408 || status === 504) {
+    return res.status(504).json({
       error:
-        error?.message ||
-        "La requête envoyée à Gemini est invalide."
+        "Gemini met trop de temps à répondre. Réessaie."
     });
   }
 
   return res.status(500).json({
     error:
-      error?.message ||
+      getErrorMessage(error) ||
       "Une erreur est survenue avec Gemini."
   });
 }
+
+/* =========================================================
+   NETTOYAGE DES MESSAGES
+========================================================= */
 
 function cleanMessages(messages) {
   if (!Array.isArray(messages)) {
@@ -165,59 +297,97 @@ function cleanMessages(messages) {
 
   return messages
     .filter((message) => {
-      return (
-        message &&
-        (message.role === "user" ||
-          message.role === "assistant") &&
-        typeof message.content === "string" &&
-        message.content.trim().length > 0
-      );
+      if (!message || typeof message !== "object") {
+        return false;
+      }
+
+      if (
+        message.role !== "user" &&
+        message.role !== "assistant"
+      ) {
+        return false;
+      }
+
+      if (typeof message.content !== "string") {
+        return false;
+      }
+
+      if (!message.content.trim()) {
+        return false;
+      }
+
+      return true;
     })
-    .slice(-30);
+    .map((message) => ({
+      role: message.role,
+      content: message.content
+        .trim()
+        .slice(0, MAX_MESSAGE_LENGTH)
+    }))
+    .slice(-MAX_MESSAGES);
 }
 
-function getLastUserMessage(messages) {
-  for (let i = messages.length - 1; i >= 0; i--) {
-    if (messages[i].role === "user") {
-      return messages[i].content.trim();
+/* =========================================================
+   CONVERSION POUR GEMINI
+========================================================= */
+
+function messagesToGemini(messages) {
+  return messages.map((message) => ({
+    role:
+      message.role === "assistant"
+        ? "model"
+        : "user",
+
+    parts: [
+      {
+        text: message.content
+      }
+    ]
+  }));
+}
+
+/* =========================================================
+   EXTRACTION DU TEXTE
+========================================================= */
+
+function extractText(response) {
+  if (!response) {
+    return "";
+  }
+
+  if (
+    typeof response.text === "string" &&
+    response.text.trim()
+  ) {
+    return response.text.trim();
+  }
+
+  const candidates =
+    Array.isArray(response.candidates)
+      ? response.candidates
+      : [];
+
+  const chunks = [];
+
+  for (const candidate of candidates) {
+    const parts =
+      candidate?.content?.parts;
+
+    if (!Array.isArray(parts)) {
+      continue;
+    }
+
+    for (const part of parts) {
+      if (
+        typeof part?.text === "string" &&
+        part.text.trim()
+      ) {
+        chunks.push(part.text);
+      }
     }
   }
 
-  return "";
-}
-
-function shouldSearchWeb(text) {
-  const query = text.toLowerCase();
-
-  const indicators = [
-    "aujourd'hui",
-    "actualité",
-    "actualités",
-    "maintenant",
-    "actuellement",
-    "dernier",
-    "dernière",
-    "derniers",
-    "récent",
-    "récente",
-    "en 2026",
-    "prix",
-    "tarif",
-    "résultat",
-    "classement",
-    "calendrier",
-    "date",
-    "quand",
-    "qui est actuellement",
-    "latest",
-    "today",
-    "current",
-    "recent"
-  ];
-
-  return indicators.some((word) =>
-    query.includes(word)
-  );
+  return chunks.join("\n").trim();
 }
 
 /* =========================================================
@@ -238,312 +408,156 @@ app.get("/api/health", (req, res) => {
   res.json({
     ok: true,
     service: "Wiener IA",
-    model: TEXT_MODEL,
-    gemini: Boolean(ai)
+    geminiConfigured: Boolean(
+      GEMINI_API_KEY && ai
+    ),
+    textModel: TEXT_MODEL,
+    imageModel: IMAGE_MODEL,
+    time: new Date().toISOString()
   });
 });
 
 /* =========================================================
-   CHAT RAPIDE
+   CHAT
 ========================================================= */
 
 app.post("/api/chat", async (req, res) => {
   try {
-    if (!requireGemini(res)) return;
+    if (!requireGemini(res)) {
+      return;
+    }
 
-    const {
-      messages,
-      previousInteractionId,
-      useSearch
-    } = req.body;
+    const messages =
+      cleanMessages(req.body?.messages);
 
-    const cleanMessagesList =
-      cleanMessages(messages);
-
-    if (cleanMessagesList.length === 0) {
+    if (!messages.length) {
       return res.status(400).json({
-        error: "Les messages reçus sont invalides."
+        error:
+          "Aucun message valide n'a été reçu."
       });
     }
 
-    const userMessage =
-      getLastUserMessage(
-        cleanMessagesList
-      );
-
-    if (!userMessage) {
-      return res.status(400).json({
-        error: "Aucun message utilisateur trouvé."
-      });
-    }
-
-    /*
-      Avec previousInteractionId, Gemini conserve le contexte
-      côté serveur.
-
-      Pour une nouvelle conversation, on envoie les derniers
-      messages utiles afin que Wiener puisse également
-      fonctionner avec l'historique déjà présent dans l'interface.
-    */
-
-    let input = userMessage;
-
-    if (!previousInteractionId) {
-      const previousMessages =
-        cleanMessagesList.slice(
-          0,
-          -1
-        );
-
-      if (previousMessages.length > 0) {
-        const context =
-          previousMessages
-            .map((message) => {
-              const role =
-                message.role === "assistant"
-                  ? "Wiener IA"
-                  : "Utilisateur";
-
-              return `${role} : ${message.content}`;
-            })
-            .join("\n\n");
-
-        input = `
-CONTEXTE DE LA CONVERSATION :
-
-${context}
-
-NOUVELLE DEMANDE DE L'UTILISATEUR :
-
-${userMessage}
-
-Réponds à la nouvelle demande en tenant compte du contexte précédent.
-`;
-      }
-    }
-
-    const config = {
-      systemInstruction:
-        WIENER_INSTRUCTIONS
-    };
-
-    /*
-      Recherche Web seulement lorsque demandée
-      explicitement ou lorsqu'elle semble nécessaire.
-    */
-
-    if (
-      useSearch === true ||
-      shouldSearchWeb(userMessage)
-    ) {
-      config.tools = [
-        {
-          type: "google_search"
-        }
-      ];
-    }
-
-    /*
-      Streaming :
-      le navigateur reçoit les morceaux de texte
-      dès qu'ils sont générés.
-    */
-
-    const stream =
-      await ai.interactions.create({
+    const response =
+      await ai.models.generateContent({
         model: TEXT_MODEL,
-        input,
-        previous_interaction_id:
-          previousInteractionId || undefined,
-        ...config,
-        stream: true
+
+        contents:
+          messagesToGemini(messages),
+
+        config: {
+          systemInstruction:
+            WIENER_INSTRUCTIONS,
+
+          temperature: 0.45,
+
+          maxOutputTokens: 4096
+        }
       });
 
-    res.status(200);
+    const answer =
+      extractText(response);
 
-    res.setHeader(
-      "Content-Type",
-      "text/event-stream; charset=utf-8"
-    );
-
-    res.setHeader(
-      "Cache-Control",
-      "no-cache, no-transform"
-    );
-
-    res.setHeader(
-      "Connection",
-      "keep-alive"
-    );
-
-    res.setHeader(
-      "X-Accel-Buffering",
-      "no"
-    );
-
-    let interactionId = null;
-    let finalText = "";
-
-    for await (const event of stream) {
-
-      /*
-        ID de l'interaction.
-      */
-
-      if (
-        event.event_type ===
-        "interaction.created"
-      ) {
-        interactionId =
-          event.interaction?.id ||
-          null;
-      }
-
-      /*
-        Texte généré.
-      */
-
-      if (
-        event.event_type ===
-          "step.delta" &&
-        event.delta?.type === "text"
-      ) {
-        const text =
-          event.delta.text || "";
-
-        if (text) {
-          finalText += text;
-
-          res.write(
-            `data: ${JSON.stringify({
-              type: "text",
-              text
-            })}\n\n`
-          );
-        }
-      }
-
-      /*
-        Interaction terminée.
-      */
-
-      if (
-        event.event_type ===
-        "interaction.completed"
-      ) {
-        interactionId =
-          event.interaction?.id ||
-          interactionId;
-
-        res.write(
-          `data: ${JSON.stringify({
-            type: "done",
-            interactionId,
-            model: TEXT_MODEL,
-            answer: finalText
-          })}\n\n`
-        );
-      }
+    if (!answer) {
+      return res.status(500).json({
+        error:
+          "Wiener IA n'a retourné aucune réponse."
+      });
     }
 
-    res.write(
-      "data: [DONE]\n\n"
-    );
-
-    res.end();
+    return res.json({
+      answer,
+      model: TEXT_MODEL
+    });
 
   } catch (error) {
-
-    /*
-      Si le streaming a déjà commencé,
-      on ne peut plus envoyer une réponse JSON classique.
-    */
-
-    if (!res.headersSent) {
-      return sendGeminiError(
-        res,
-        error
-      );
-    }
-
-    try {
-      res.write(
-        `data: ${JSON.stringify({
-          type: "error",
-          error:
-            error?.message ||
-            "Erreur Gemini."
-        })}\n\n`
-      );
-
-      res.end();
-    } catch {
-      res.end();
-    }
+    return sendGeminiError(
+      res,
+      error
+    );
   }
 });
 
 /* =========================================================
-   CHAT NON STREAMING
-   Utile pour certaines fonctions internes.
+   RÉSOLUTION D'EXERCICES
 ========================================================= */
 
 app.post(
-  "/api/chat-sync",
+  "/api/exercises",
   async (req, res) => {
     try {
-      if (!requireGemini(res)) return;
+      if (!requireGemini(res)) {
+        return;
+      }
 
-      const {
-        messages,
-        previousInteractionId,
-        useSearch
-      } = req.body;
+      const question =
+        typeof req.body?.question === "string"
+          ? req.body.question.trim()
+          : "";
 
-      const clean =
-        cleanMessages(messages);
+      const level =
+        typeof req.body?.level === "string"
+          ? req.body.level.trim()
+          : "non précisé";
 
-      if (clean.length === 0) {
+      const subject =
+        typeof req.body?.subject === "string"
+          ? req.body.subject.trim()
+          : "non précisée";
+
+      if (!question) {
         return res.status(400).json({
-          error: "Messages invalides."
+          error:
+            "Aucun exercice n'a été reçu."
         });
       }
 
-      const userMessage =
-        getLastUserMessage(clean);
-
-      const config = {
-        systemInstruction:
-          WIENER_INSTRUCTIONS
-      };
-
-      if (
-        useSearch === true ||
-        shouldSearchWeb(userMessage)
-      ) {
-        config.tools = [
-          {
-            type: "google_search"
-          }
-        ];
+      if (question.length > 30000) {
+        return res.status(413).json({
+          error:
+            "L'exercice est trop long."
+        });
       }
 
-      const interaction =
-        await ai.interactions.create({
+      const prompt = `
+Matière : ${subject}
+Niveau : ${level}
+
+EXERCICE :
+${question}
+
+Résous maintenant cet exercice.
+`.trim();
+
+      const response =
+        await ai.models.generateContent({
           model: TEXT_MODEL,
-          input: userMessage,
-          previous_interaction_id:
-            previousInteractionId ||
-            undefined,
-          ...config
+
+          contents: prompt,
+
+          config: {
+            systemInstruction:
+              WIENER_INSTRUCTIONS +
+              "\n\n" +
+              EXERCISE_INSTRUCTIONS,
+
+            temperature: 0.2,
+
+            maxOutputTokens: 5000
+          }
         });
+
+      const answer =
+        extractText(response);
+
+      if (!answer) {
+        return res.status(500).json({
+          error:
+            "Aucune solution n'a été générée."
+        });
+      }
 
       return res.json({
-        answer:
-          interaction.output_text ||
-          "",
-        interactionId:
-          interaction.id,
+        answer,
         model: TEXT_MODEL
       });
 
@@ -557,193 +571,124 @@ app.post(
 );
 
 /* =========================================================
-   EXERCICES
-========================================================= */
-
-app.post(
-  "/api/exercises",
-  async (req, res) => {
-    try {
-      if (!requireGemini(res)) return;
-
-      const {
-        question,
-        level,
-        subject
-      } = req.body;
-
-      if (
-        typeof question !== "string" ||
-        !question.trim()
-      ) {
-        return res.status(400).json({
-          error: "Aucun exercice reçu."
-        });
-      }
-
-      const prompt = `
-Résous l'exercice suivant avec une méthode pédagogique.
-
-Matière : ${
-        subject || "non précisée"
-      }
-
-Niveau : ${
-        level || "non précisé"
-      }
-
-EXERCICE :
-${question.trim()}
-
-MÉTHODE OBLIGATOIRE :
-
-1. Identifie les données importantes.
-2. Identifie ce qui est demandé.
-3. Donne la formule, la propriété ou la règle utilisée.
-4. Fais les calculs étape par étape.
-5. Explique les étapes difficiles.
-6. Donne la réponse finale clairement.
-7. Vérifie le résultat si possible.
-
-Ne saute pas les étapes importantes.
-`;
-
-      const interaction =
-        await ai.interactions.create({
-          model: TEXT_MODEL,
-          input: prompt,
-          systemInstruction:
-            WIENER_INSTRUCTIONS
-        });
-
-      const answer =
-        interaction.output_text;
-
-      if (
-        !answer ||
-        !answer.trim()
-      ) {
-        return res.status(500).json({
-          error:
-            "Aucune solution n'a été générée."
-        });
-      }
-
-      return res.json({
-        answer: answer.trim(),
-        model: TEXT_MODEL,
-        interactionId:
-          interaction.id
-      });
-
-    } catch (error) {
-      return sendGeminiError(
-        res,
-        error
-      );
-    }
-  }
-);
-
-/* =========================================================
-   RECHERCHE WEB
+   RECHERCHE INTERNET
 ========================================================= */
 
 app.post(
   "/api/search",
   async (req, res) => {
     try {
-      if (!requireGemini(res)) return;
+      if (!requireGemini(res)) {
+        return;
+      }
 
-      const {
-        query
-      } = req.body;
+      const query =
+        typeof req.body?.query === "string"
+          ? req.body.query.trim()
+          : "";
 
-      if (
-        typeof query !== "string" ||
-        !query.trim()
-      ) {
+      if (!query) {
         return res.status(400).json({
-          error: "Aucune recherche reçue."
+          error:
+            "Aucune recherche n'a été reçue."
+        });
+      }
+
+      if (query.length > 10000) {
+        return res.status(413).json({
+          error:
+            "La recherche est trop longue."
         });
       }
 
       const prompt = `
-Recherche sur Internet les informations nécessaires
-pour répondre précisément à cette question :
+Recherche les informations nécessaires pour répondre précisément
+à cette question :
 
-${query.trim()}
+${query}
 
 Consignes :
 - Utilise la recherche Google.
-- Privilégie les informations récentes.
-- Compare les informations lorsque nécessaire.
-- Ne présente pas une information incertaine comme un fait.
-- Réponds clairement.
-- Mentionne les sources importantes lorsque les informations de recherche
-  permettent de les identifier.
-`;
+- Privilégie les sources fiables.
+- Pour une information récente, vérifie sa date.
+- Ne présente pas une supposition comme un fait.
+- Réponds directement à la question.
+- Lorsque les sources disponibles sont importantes, indique-les.
+`.trim();
 
-      const interaction =
-        await ai.interactions.create({
+      const response =
+        await ai.models.generateContent({
           model: TEXT_MODEL,
-          input: prompt,
-          systemInstruction:
-            WIENER_INSTRUCTIONS,
-          tools: [
-            {
-              type: "google_search"
-            }
-          ]
+
+          contents: prompt,
+
+          config: {
+            systemInstruction:
+              WIENER_INSTRUCTIONS,
+
+            temperature: 0.3,
+
+            maxOutputTokens: 4500,
+
+            tools: [
+              {
+                googleSearch: {}
+              }
+            ]
+          }
         });
 
       const answer =
-        interaction.output_text ||
-        "";
+        extractText(response);
 
-      /*
-        Extraction des résultats Web
-        lorsque Gemini les fournit.
-      */
+      if (!answer) {
+        return res.status(500).json({
+          error:
+            "La recherche n'a retourné aucune réponse."
+        });
+      }
+
+      const metadata =
+        response?.candidates?.[0]
+          ?.groundingMetadata;
 
       const sources = [];
 
-      const steps =
-        interaction.steps || [];
+      const chunks =
+        metadata?.groundingChunks;
 
-      for (const step of steps) {
+      if (Array.isArray(chunks)) {
+        for (const chunk of chunks) {
+          const uri =
+            chunk?.web?.uri;
 
-        if (
-          step.type ===
-          "google_search_result"
-        ) {
-          const results =
-            step.results ||
-            [];
-
-          for (const result of results) {
-
-            if (
-              result.url
-            ) {
-              sources.push({
-                title:
-                  result.title ||
-                  "Source",
-                url:
-                  result.url
-              });
-            }
+          if (!uri) {
+            continue;
           }
+
+          sources.push({
+            title:
+              chunk?.web?.title ||
+              "Source",
+            url: uri
+          });
         }
       }
 
+      const uniqueSources =
+        Array.from(
+          new Map(
+            sources.map((source) => [
+              source.url,
+              source
+            ])
+          ).values()
+        ).slice(0, 10);
+
       return res.json({
-        answer: answer.trim(),
-        sources,
-        model: TEXT_MODEL,
-        interactionId:
-          interaction.id
+        answer,
+        sources: uniqueSources,
+        model: TEXT_MODEL
       });
 
     } catch (error) {
@@ -759,35 +704,301 @@ Consignes :
    CALCULATRICE
 ========================================================= */
 
+/*
+  Calculatrice sans eval() ni Function().
+  Elle accepte :
+  +  -  *  /  %  ^
+  parenthèses et nombres décimaux.
+*/
+
+function tokenizeExpression(expression) {
+  const tokens = [];
+
+  let i = 0;
+
+  while (i < expression.length) {
+    const char =
+      expression[i];
+
+    if (/\d|\./.test(char)) {
+      let number = "";
+
+      while (
+        i < expression.length &&
+        /[\d.]/.test(expression[i])
+      ) {
+        number += expression[i];
+        i++;
+      }
+
+      if (
+        (number.match(/\./g) || [])
+          .length > 1
+      ) {
+        throw new Error(
+          "Nombre invalide."
+        );
+      }
+
+      if (number === ".") {
+        throw new Error(
+          "Nombre invalide."
+        );
+      }
+
+      tokens.push({
+        type: "number",
+        value: Number(number)
+      });
+
+      continue;
+    }
+
+    if (
+      "+-*/%^()".includes(char)
+    ) {
+      tokens.push({
+        type: "operator",
+        value: char
+      });
+
+      i++;
+      continue;
+    }
+
+    throw new Error(
+      "Caractère non autorisé."
+    );
+  }
+
+  return tokens;
+}
+
+function parseExpressionTokens(tokens) {
+  let position = 0;
+
+  function peek() {
+    return tokens[position];
+  }
+
+  function consume(value) {
+    const token = peek();
+
+    if (
+      !token ||
+      token.value !== value
+    ) {
+      throw new Error(
+        "Expression invalide."
+      );
+    }
+
+    position++;
+  }
+
+  function parsePrimary() {
+    const token = peek();
+
+    if (!token) {
+      throw new Error(
+        "Expression incomplète."
+      );
+    }
+
+    if (
+      token.type === "number"
+    ) {
+      position++;
+      return token.value;
+    }
+
+    if (token.value === "(") {
+      position++;
+
+      const value =
+        parseAdditive();
+
+      consume(")");
+
+      return value;
+    }
+
+    if (
+      token.value === "+"
+    ) {
+      position++;
+      return +parsePrimary();
+    }
+
+    if (
+      token.value === "-"
+    ) {
+      position++;
+      return -parsePrimary();
+    }
+
+    throw new Error(
+      "Expression invalide."
+    );
+  }
+
+  function parsePower() {
+    let left =
+      parsePrimary();
+
+    if (
+      peek()?.value === "^"
+    ) {
+      position++;
+
+      const right =
+        parsePower();
+
+      left =
+        Math.pow(
+          left,
+          right
+        );
+    }
+
+    return left;
+  }
+
+  function parseMultiplicative() {
+    let value =
+      parsePower();
+
+    while (true) {
+      const operator =
+        peek()?.value;
+
+      if (
+        operator !== "*" &&
+        operator !== "/" &&
+        operator !== "%"
+      ) {
+        break;
+      }
+
+      position++;
+
+      const right =
+        parsePower();
+
+      if (
+        operator === "*"
+      ) {
+        value *= right;
+      }
+
+      if (
+        operator === "/"
+      ) {
+        if (right === 0) {
+          throw new Error(
+            "Division par zéro."
+          );
+        }
+
+        value /= right;
+      }
+
+      if (
+        operator === "%"
+      ) {
+        if (right === 0) {
+          throw new Error(
+            "Modulo par zéro."
+          );
+        }
+
+        value %= right;
+      }
+    }
+
+    return value;
+  }
+
+  function parseAdditive() {
+    let value =
+      parseMultiplicative();
+
+    while (true) {
+      const operator =
+        peek()?.value;
+
+      if (
+        operator !== "+" &&
+        operator !== "-"
+      ) {
+        break;
+      }
+
+      position++;
+
+      const right =
+        parseMultiplicative();
+
+      if (
+        operator === "+"
+      ) {
+        value += right;
+      } else {
+        value -= right;
+      }
+    }
+
+    return value;
+  }
+
+  const result =
+    parseAdditive();
+
+  if (
+    position !== tokens.length
+  ) {
+    throw new Error(
+      "Expression invalide."
+    );
+  }
+
+  return result;
+}
+
 app.post(
   "/api/calculate",
   async (req, res) => {
-
     try {
+      const original =
+        typeof req.body?.expression ===
+        "string"
+          ? req.body.expression.trim()
+          : "";
 
-      const {
-        expression
-      } = req.body;
-
-      if (
-        typeof expression !== "string" ||
-        !expression.trim()
-      ) {
+      if (!original) {
         return res.status(400).json({
           error:
             "Aucune expression reçue."
         });
       }
 
-      let expr =
-        expression
-          .trim()
+      if (
+        original.length > 200
+      ) {
+        return res.status(400).json({
+          error:
+            "Expression trop longue."
+        });
+      }
+
+      const expression =
+        original
           .replace(/,/g, ".")
           .replace(/\s+/g, "");
 
       if (
         !/^[0-9+\-*/().%^]+$/.test(
-          expr
+          expression
         )
       ) {
         return res.status(400).json({
@@ -796,28 +1007,15 @@ app.post(
         });
       }
 
-      if (
-        expr.length > 200 ||
-        expr.includes("..") ||
-        expr.includes("++") ||
-        expr.includes("--")
-      ) {
-        return res.status(400).json({
-          error:
-            "Expression invalide."
-        });
-      }
-
-      expr =
-        expr.replace(
-          /\^/g,
-          "**"
+      const tokens =
+        tokenizeExpression(
+          expression
         );
 
       const result =
-        Function(
-          `"use strict"; return (${expr})`
-        )();
+        parseExpressionTokens(
+          tokens
+        );
 
       if (
         typeof result !== "number" ||
@@ -825,18 +1023,19 @@ app.post(
       ) {
         return res.status(400).json({
           error:
-            "Impossible de calculer cette expression."
+            "Résultat mathématique invalide."
         });
       }
 
       return res.json({
-        expression,
+        expression: original,
         result
       });
 
-    } catch {
+    } catch (error) {
       return res.status(400).json({
         error:
+          error?.message ||
           "Expression mathématique invalide."
       });
     }
@@ -850,118 +1049,52 @@ app.post(
 app.post(
   "/api/image",
   async (req, res) => {
-
     try {
-
-      if (!requireGemini(res))
+      if (!requireGemini(res)) {
         return;
+      }
 
-      const {
-        prompt
-      } = req.body;
+      const prompt =
+        typeof req.body?.prompt === "string"
+          ? req.body.prompt.trim()
+          : "";
 
-      if (
-        typeof prompt !== "string" ||
-        !prompt.trim()
-      ) {
+      if (!prompt) {
         return res.status(400).json({
           error:
             "Aucune description d'image reçue."
         });
       }
 
+      if (
+        prompt.length > 10000
+      ) {
+        return res.status(413).json({
+          error:
+            "La description de l'image est trop longue."
+        });
+      }
+
       const interaction =
         await ai.interactions.create({
           model: IMAGE_MODEL,
-          input: prompt.trim(),
-          response_format: [
-            {
-              type: "image"
-            },
-            {
-              type: "text"
-            }
-          ]
+
+          input: prompt,
+
+          response_format: {
+            type: "image",
+            mime_type: "image/png",
+            aspect_ratio: "1:1",
+            image_size: "1K"
+          }
         });
 
-      /*
-        Recherche de l'image générée
-        dans les étapes de l'interaction.
-      */
-
-      let image = null;
-      let text = "";
+      const generatedImage =
+        interaction?.output_image;
 
       if (
-        Array.isArray(
-          interaction.steps
-        )
-      ) {
-
-        for (
-          const step
-          of interaction.steps
-        ) {
-
-          const content =
-            step.content;
-
-          if (
-            !Array.isArray(
-              content
-            )
-          ) {
-            continue;
-          }
-
-          for (
-            const item
-            of content
-          ) {
-
-            if (
-              item.type ===
-              "image"
-            ) {
-              image = item;
-            }
-
-            if (
-              item.type ===
-              "text"
-            ) {
-              text +=
-                item.text ||
-                "";
-            }
-          }
-        }
-      }
-
-      /*
-        Compatibilité avec certaines réponses
-        du SDK.
-      */
-
-      if (
-        !image &&
-        interaction.output_image
-      ) {
-        image =
-          interaction.output_image;
-      }
-
-      if (
-        !text &&
-        interaction.output_text
-      ) {
-        text =
-          interaction.output_text;
-      }
-
-      if (
-        !image ||
-        !image.data
+        !generatedImage ||
+        !generatedImage.data
       ) {
         return res.status(500).json({
           error:
@@ -972,19 +1105,18 @@ app.post(
       return res.json({
         image:
           `data:${
-            image.mime_type ||
+            generatedImage.mime_type ||
             "image/png"
-          };base64,${
-            image.data
-          }`,
-        text,
-        model: IMAGE_MODEL,
-        interactionId:
-          interaction.id
+          };base64,${generatedImage.data}`,
+
+        text:
+          interaction?.output_text ||
+          "",
+
+        model: IMAGE_MODEL
       });
 
     } catch (error) {
-
       return sendGeminiError(
         res,
         error
@@ -994,25 +1126,99 @@ app.post(
 );
 
 /* =========================================================
+   VALIDATION MIME
+========================================================= */
+
+const ALLOWED_MIME_TYPES = new Set([
+  "application/pdf",
+  "image/png",
+  "image/jpeg",
+  "image/webp"
+]);
+
+function getExtensionFromMime(
+  mimeType
+) {
+  switch (mimeType) {
+    case "application/pdf":
+      return ".pdf";
+
+    case "image/png":
+      return ".png";
+
+    case "image/jpeg":
+      return ".jpg";
+
+    case "image/webp":
+      return ".webp";
+
+    default:
+      return "";
+  }
+}
+
+/* =========================================================
+   BASE64
+========================================================= */
+
+function extractBase64Data(file) {
+  if (
+    typeof file !== "string"
+  ) {
+    throw new Error(
+      "Fichier invalide."
+    );
+  }
+
+  if (
+    file.startsWith("data:")
+  ) {
+    const comma =
+      file.indexOf(",");
+
+    if (comma === -1) {
+      throw new Error(
+        "Format base64 invalide."
+      );
+    }
+
+    return file.slice(
+      comma + 1
+    );
+  }
+
+  return file;
+}
+
+/* =========================================================
    ANALYSE PDF / IMAGE
 ========================================================= */
 
 app.post(
   "/api/analyze-file",
   async (req, res) => {
-
     let temporaryFile = null;
+    let uploadedFileName = null;
 
     try {
-
-      if (!requireGemini(res))
+      if (!requireGemini(res)) {
         return;
+      }
 
-      const {
-        file,
-        mimeType,
-        prompt
-      } = req.body;
+      const file =
+        req.body?.file;
+
+      const mimeType =
+        typeof req.body?.mimeType ===
+        "string"
+          ? req.body.mimeType.trim()
+          : "";
+
+      const prompt =
+        typeof req.body?.prompt ===
+        "string"
+          ? req.body.prompt.trim()
+          : "";
 
       if (
         typeof file !== "string" ||
@@ -1024,47 +1230,26 @@ app.post(
         });
       }
 
-      const allowedMimeTypes = [
-        "application/pdf",
-        "image/png",
-        "image/jpeg",
-        "image/webp"
-      ];
+      if (!mimeType) {
+        return res.status(400).json({
+          error:
+            "Le type du fichier est manquant."
+        });
+      }
 
       if (
-        !allowedMimeTypes.includes(
+        !ALLOWED_MIME_TYPES.has(
           mimeType
         )
       ) {
         return res.status(400).json({
           error:
-            "Type de fichier non pris en charge."
+            "Type de fichier non pris en charge. Utilise PDF, PNG, JPEG ou WEBP."
         });
       }
 
-      let base64Data = file;
-
-      if (
-        file.startsWith("data:")
-      ) {
-
-        const commaIndex =
-          file.indexOf(",");
-
-        if (
-          commaIndex === -1
-        ) {
-          return res.status(400).json({
-            error:
-              "Format base64 invalide."
-          });
-        }
-
-        base64Data =
-          file.substring(
-            commaIndex + 1
-          );
-      }
+      const base64Data =
+        extractBase64Data(file);
 
       const buffer =
         Buffer.from(
@@ -1085,38 +1270,19 @@ app.post(
       ) {
         return res.status(413).json({
           error:
-            "Fichier trop volumineux. Maximum : 30 MB."
+            "Le fichier est trop volumineux. Maximum : 30 MB."
         });
       }
 
-      let extension =
-        ".jpg";
-
-      if (
-        mimeType ===
-        "application/pdf"
-      ) {
-        extension = ".pdf";
-      }
-
-      if (
-        mimeType ===
-        "image/png"
-      ) {
-        extension = ".png";
-      }
-
-      if (
-        mimeType ===
-        "image/webp"
-      ) {
-        extension = ".webp";
-      }
+      const extension =
+        getExtensionFromMime(
+          mimeType
+        );
 
       temporaryFile =
         path.join(
           os.tmpdir(),
-          `wiener-${Date.now()}${extension}`
+          `wiener-${Date.now()}-${crypto.randomBytes(6).toString("hex")}${extension}`
         );
 
       await fs.writeFile(
@@ -1125,66 +1291,166 @@ app.post(
       );
 
       /*
-        Pour l'analyse multimodale,
-        on transmet directement les données
-        au modèle via l'Interactions API.
+        Upload vers Gemini Files API.
+        Les fichiers sont ensuite utilisés comme URI dans
+        generateContent.
       */
 
-      const base64 =
-        buffer.toString(
-          "base64"
+      const uploadedFile =
+        await ai.files.upload({
+          file: temporaryFile,
+
+          config: {
+            mimeType,
+
+            displayName:
+              `Wiener IA ${Date.now()}`
+          }
+        });
+
+      uploadedFileName =
+        uploadedFile?.name ||
+        null;
+
+      if (
+        !uploadedFile ||
+        !uploadedFile.name
+      ) {
+        return res.status(500).json({
+          error:
+            "Gemini n'a pas accepté le fichier."
+        });
+      }
+
+      /*
+        Attendre ACTIVE.
+      */
+
+      let processedFile =
+        uploadedFile;
+
+      const maxChecks = 30;
+
+      for (
+        let i = 0;
+        i < maxChecks;
+        i++
+      ) {
+        const state =
+          String(
+            processedFile?.state ||
+            ""
+          ).toUpperCase();
+
+        if (
+          state === "ACTIVE"
+        ) {
+          break;
+        }
+
+        if (
+          state === "FAILED"
+        ) {
+          return res.status(500).json({
+            error:
+              "Gemini n'a pas réussi à traiter le fichier."
+          });
+        }
+
+        await new Promise(
+          (resolve) =>
+            setTimeout(
+              resolve,
+              1500
+            )
         );
 
+        processedFile =
+          await ai.files.get({
+            name:
+              uploadedFile.name
+          });
+      }
+
+      const finalState =
+        String(
+          processedFile?.state ||
+          ""
+        ).toUpperCase();
+
+      if (
+        finalState !== "ACTIVE"
+      ) {
+        return res.status(504).json({
+          error:
+            "Le traitement du fichier prend trop de temps."
+        });
+      }
+
+      if (
+        !processedFile.uri
+      ) {
+        return res.status(500).json({
+          error:
+            "Gemini n'a pas fourni l'URI du fichier."
+        });
+      }
+
       const userPrompt =
-        typeof prompt ===
-          "string" &&
-        prompt.trim()
-          ? prompt.trim()
-          : `
+        prompt ||
+        `
 Analyse ce fichier.
 
 Si c'est un exercice :
-- lis précisément l'énoncé ;
+- identifie l'énoncé ;
 - identifie les données ;
-- résous l'exercice étape par étape ;
-- donne le résultat final.
+- résous étape par étape ;
+- explique les calculs ;
+- donne la réponse finale.
 
 Si c'est un document :
-- résume les informations essentielles ;
-- explique les points importants ;
-- signale les informations difficiles à comprendre.
+- résume les informations importantes ;
+- explique les points difficiles ;
+- indique les éléments essentiels.
 
 Si c'est une image :
-- analyse précisément ce qui est visible ;
-- lis le texte lorsque c'est nécessaire ;
-- réponds à la demande de l'utilisateur.
+- lis le texte visible lorsque nécessaire ;
+- analyse les éléments utiles à la demande.
 
 Réponds en français.
-`;
+`.trim();
 
-      const interaction =
-        await ai.interactions.create({
+      const response =
+        await ai.models.generateContent({
           model: TEXT_MODEL,
-          input: [
-            {
-              type: "text",
-              text: userPrompt
-            },
-            {
-              type: "image",
-              data: base64,
-              mime_type: mimeType
-            }
-          ],
-          systemInstruction:
-            WIENER_INSTRUCTIONS
+
+          contents:
+            createUserContent([
+              createPartFromUri(
+                processedFile.uri,
+                processedFile.mimeType ||
+                  mimeType
+              ),
+
+              userPrompt
+            ]),
+
+          config: {
+            systemInstruction:
+              WIENER_INSTRUCTIONS +
+              "\n\n" +
+              FILE_INSTRUCTIONS,
+
+            temperature: 0.25,
+
+            maxOutputTokens: 5000
+          }
         });
 
       const answer =
-        interaction.output_text ||
-        "";
+        extractText(response);
 
-      if (!answer.trim()) {
+      if (!answer) {
         return res.status(500).json({
           error:
             "Gemini n'a retourné aucune analyse."
@@ -1192,24 +1458,18 @@ Réponds en français.
       }
 
       return res.json({
-        answer: answer.trim(),
-        model: TEXT_MODEL,
-        interactionId:
-          interaction.id
+        answer,
+        model: TEXT_MODEL
       });
 
     } catch (error) {
-
       return sendGeminiError(
         res,
         error
       );
 
     } finally {
-
-      if (
-        temporaryFile
-      ) {
+      if (temporaryFile) {
         try {
           await fs.unlink(
             temporaryFile
@@ -1218,28 +1478,46 @@ Réponds en français.
           // Rien à faire.
         }
       }
+
+      /*
+        Les fichiers Gemini sont temporaires.
+        On tente de supprimer le fichier distant
+        lorsqu'un nom a été fourni.
+      */
+
+      if (
+        uploadedFileName &&
+        ai
+      ) {
+        try {
+          await ai.files.delete({
+            name:
+              uploadedFileName
+          });
+        } catch {
+          // La suppression distante n'est pas bloquante.
+        }
+      }
     }
   }
 );
 
 /* =========================================================
-   ROUTES API INEXISTANTES
+   ROUTE API INEXISTANTE
 ========================================================= */
 
 app.use(
   "/api",
   (req, res) => {
-
-    res.status(404).json({
+    return res.status(404).json({
       error:
         "Route API introuvable."
     });
-
   }
 );
 
 /* =========================================================
-   ERREURS JSON
+   ERREUR JSON
 ========================================================= */
 
 app.use(
@@ -1249,10 +1527,8 @@ app.use(
     res,
     next
   ) => {
-
     if (
-      error instanceof
-        SyntaxError &&
+      error instanceof SyntaxError &&
       error.status === 400 &&
       error.body
     ) {
@@ -1263,18 +1539,14 @@ app.use(
     }
 
     console.error(
-      "WIENER SERVER ERROR:",
+      "WIENER IA / EXPRESS ERROR",
       error
     );
 
-    if (
-      !res.headersSent
-    ) {
-      res.status(500).json({
-        error:
-          "Erreur interne du serveur."
-      });
-    }
+    return res.status(500).json({
+      error:
+        "Erreur interne du serveur."
+    });
   }
 );
 
@@ -1286,42 +1558,36 @@ app.listen(
   PORT,
   "0.0.0.0",
   () => {
-
     console.log(
-      "================================"
+      "======================================"
     );
 
     console.log(
-      "🤖 WIENER IA V2"
+      "🤖 WIENER IA"
     );
 
     console.log(
-      `🚀 Port : ${PORT}`
+      `🚀 Serveur démarré sur le port ${PORT}`
     );
 
     console.log(
-      `🧠 Modèle : ${TEXT_MODEL}`
+      `🧠 Modèle texte : ${TEXT_MODEL}`
     );
 
     console.log(
-      `🎨 Image : ${IMAGE_MODEL}`
+      `🎨 Modèle image : ${IMAGE_MODEL}`
     );
 
     console.log(
-      `🔐 Gemini : ${
+      `🔐 GEMINI_API_KEY : ${
         GEMINI_API_KEY
-          ? "CONFIGURÉ"
-          : "ABSENT"
+          ? "CONFIGURÉE"
+          : "ABSENTE"
       }`
     );
 
     console.log(
-      "⚡ Streaming : ACTIVÉ"
-    );
-
-    console.log(
-      "================================"
+      "======================================"
     );
   }
 );
-```
