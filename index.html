@@ -4,6 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Wiener IA</title>
 
 <style>
@@ -14,28 +15,30 @@
 :root{
   --bg:#ffffff;
   --sidebar:#f7f7f8;
+  --surface:#ffffff;
+  --surface2:#f3f4f6;
   --text:#171717;
   --muted:#6b7280;
   --border:#e5e7eb;
   --hover:#ececec;
-  --assistant:#ffffff;
-  --user:#f3f4f6;
   --accent:#111111;
+  --danger:#dc2626;
 }
 
 body.dark{
   --bg:#212121;
   --sidebar:#171717;
+  --surface:#212121;
+  --surface2:#303030;
   --text:#f5f5f5;
   --muted:#a1a1aa;
-  --border:#333333;
+  --border:#3a3a3a;
   --hover:#2d2d2d;
-  --assistant:#212121;
-  --user:#303030;
   --accent:#ffffff;
 }
 
-html,body{
+html,
+body{
   margin:0;
   height:100%;
   font-family:Arial,Helvetica,sans-serif;
@@ -48,33 +51,53 @@ body{
   overflow:hidden;
 }
 
-/* SIDEBAR */
+/* =========================
+   SIDEBAR
+========================= */
 
 .sidebar{
-  width:270px;
+  width:280px;
   background:var(--sidebar);
   border-right:1px solid var(--border);
   display:flex;
   flex-direction:column;
   padding:12px;
   transition:.25s;
+  z-index:100;
 }
 
 .logo{
+  display:flex;
+  align-items:center;
+  gap:9px;
   font-size:20px;
   font-weight:bold;
   padding:12px;
+  margin-bottom:4px;
+}
+
+.logo-icon{
+  width:32px;
+  height:32px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:9px;
+  background:var(--accent);
+  color:var(--bg);
 }
 
 .new-chat{
+  width:100%;
   border:1px solid var(--border);
-  background:var(--bg);
+  background:var(--surface);
   color:var(--text);
-  border-radius:8px;
-  padding:11px;
+  border-radius:9px;
+  padding:12px;
   cursor:pointer;
   font-size:14px;
   margin-bottom:12px;
+  text-align:left;
 }
 
 .new-chat:hover{
@@ -90,6 +113,8 @@ body{
   color:var(--muted);
   font-size:12px;
   padding:10px;
+  text-transform:uppercase;
+  letter-spacing:.5px;
 }
 
 .history-item{
@@ -100,9 +125,14 @@ body{
   overflow:hidden;
   text-overflow:ellipsis;
   font-size:14px;
+  margin-bottom:2px;
 }
 
 .history-item:hover{
+  background:var(--hover);
+}
+
+.history-item.active{
   background:var(--hover);
 }
 
@@ -120,19 +150,23 @@ body{
   text-align:left;
   border-radius:8px;
   cursor:pointer;
+  font-size:14px;
 }
 
 .sidebar-button:hover{
   background:var(--hover);
 }
 
-/* MAIN */
+/* =========================
+   MAIN
+========================= */
 
 .main{
   flex:1;
   display:flex;
   flex-direction:column;
   min-width:0;
+  height:100vh;
 }
 
 .topbar{
@@ -142,6 +176,7 @@ body{
   align-items:center;
   padding:0 18px;
   gap:12px;
+  flex-shrink:0;
 }
 
 .menu{
@@ -149,7 +184,7 @@ body{
   border:0;
   background:transparent;
   color:var(--text);
-  font-size:24px;
+  font-size:23px;
   cursor:pointer;
 }
 
@@ -158,43 +193,66 @@ body{
   font-size:17px;
 }
 
-/* CHAT */
+.model{
+  margin-left:auto;
+  border:1px solid var(--border);
+  background:var(--surface);
+  color:var(--text);
+  border-radius:8px;
+  padding:7px 10px;
+  cursor:pointer;
+}
+
+/* =========================
+   CHAT
+========================= */
 
 #chat{
   flex:1;
   overflow-y:auto;
-  padding:25px 15%;
+  padding:30px 15%;
+  scroll-behavior:smooth;
 }
 
 .message{
   display:flex;
-  margin-bottom:25px;
+  margin-bottom:28px;
 }
 
 .message.user{
   justify-content:flex-end;
 }
 
+.message-content{
+  max-width:850px;
+  min-width:0;
+}
+
 .bubble{
-  max-width:800px;
   padding:13px 16px;
-  border-radius:14px;
-  line-height:1.55;
-  white-space:pre-wrap;
+  border-radius:15px;
+  line-height:1.6;
   overflow-wrap:anywhere;
+  white-space:pre-wrap;
 }
 
 .user .bubble{
-  background:var(--user);
+  background:var(--surface2);
 }
 
 .assistant .bubble{
-  background:var(--assistant);
+  background:transparent;
+}
+
+.message-meta{
+  color:var(--muted);
+  font-size:11px;
+  margin-top:5px;
 }
 
 .actions{
   display:flex;
-  gap:5px;
+  gap:3px;
   margin-top:7px;
 }
 
@@ -203,36 +261,75 @@ body{
   background:transparent;
   color:var(--muted);
   cursor:pointer;
-  padding:5px 7px;
-  border-radius:6px;
+  padding:6px 8px;
+  border-radius:7px;
 }
 
 .action:hover{
   background:var(--hover);
 }
 
-/* WELCOME */
+/* =========================
+   WELCOME
+========================= */
 
 .welcome{
+  max-width:850px;
+  margin:13vh auto 0;
   text-align:center;
-  margin-top:15vh;
+}
+
+.welcome-logo{
+  width:64px;
+  height:64px;
+  margin:auto;
+  border-radius:18px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:var(--accent);
+  color:var(--bg);
+  font-size:30px;
 }
 
 .welcome h1{
   font-size:32px;
-  margin-bottom:10px;
+  margin:18px 0 8px;
 }
 
 .welcome p{
   color:var(--muted);
 }
 
-/* TYPING */
+.suggestions{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
+  margin-top:30px;
+}
+
+.suggestion{
+  padding:14px;
+  border:1px solid var(--border);
+  background:var(--surface);
+  color:var(--text);
+  border-radius:12px;
+  cursor:pointer;
+  text-align:left;
+}
+
+.suggestion:hover{
+  background:var(--hover);
+}
+
+/* =========================
+   TYPING
+========================= */
 
 .typing{
   display:flex;
   gap:5px;
-  padding:8px 2px;
+  padding:10px 2px;
 }
 
 .dot{
@@ -252,26 +349,38 @@ body{
 }
 
 @keyframes blink{
-  0%,80%,100%{opacity:.3}
-  40%{opacity:1}
+  0%,80%,100%{
+    opacity:.3;
+  }
+
+  40%{
+    opacity:1;
+  }
 }
 
-/* COMPOSER */
+/* =========================
+   COMPOSER
+========================= */
 
 .composer-area{
   padding:10px 15% 18px;
+  flex-shrink:0;
 }
 
 .composer{
   max-width:900px;
   margin:auto;
   border:1px solid var(--border);
-  background:var(--bg);
-  border-radius:15px;
+  background:var(--surface);
+  border-radius:16px;
+  padding:8px;
+  box-shadow:0 2px 10px rgba(0,0,0,.05);
+}
+
+.composer-row{
   display:flex;
   align-items:flex-end;
-  padding:8px;
-  box-shadow:0 2px 8px rgba(0,0,0,.04);
+  gap:4px;
 }
 
 textarea{
@@ -288,6 +397,21 @@ textarea{
   font-family:inherit;
 }
 
+.tool{
+  border:0;
+  background:transparent;
+  color:var(--muted);
+  width:40px;
+  height:40px;
+  border-radius:9px;
+  cursor:pointer;
+  font-size:18px;
+}
+
+.tool:hover{
+  background:var(--hover);
+}
+
 .send{
   border:0;
   border-radius:9px;
@@ -296,7 +420,7 @@ textarea{
   width:42px;
   height:42px;
   cursor:pointer;
-  font-size:18px;
+  font-size:19px;
 }
 
 .send:disabled{
@@ -304,25 +428,20 @@ textarea{
   cursor:not-allowed;
 }
 
-.tools{
+.composer-footer{
   display:flex;
   align-items:center;
-  gap:5px;
+  gap:4px;
+  padding:3px 5px 0;
 }
 
-.tool{
-  border:0;
-  background:transparent;
+.file-info{
   color:var(--muted);
-  width:38px;
-  height:38px;
-  border-radius:8px;
-  cursor:pointer;
-  font-size:18px;
-}
-
-.tool:hover{
-  background:var(--hover);
+  font-size:12px;
+  flex:1;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
 }
 
 .disclaimer{
@@ -332,20 +451,117 @@ textarea{
   margin-top:7px;
 }
 
-/* MOBILE */
+/* =========================
+   FILE PREVIEW
+========================= */
+
+.attachments{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-bottom:8px;
+}
+
+.attachment{
+  border:1px solid var(--border);
+  background:var(--surface2);
+  border-radius:8px;
+  padding:7px 9px;
+  font-size:12px;
+  display:flex;
+  gap:6px;
+  align-items:center;
+}
+
+.remove-file{
+  border:0;
+  background:transparent;
+  color:var(--muted);
+  cursor:pointer;
+}
+
+/* =========================
+   MODAL
+========================= */
+
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.45);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:300;
+  padding:20px;
+}
+
+.modal.open{
+  display:flex;
+}
+
+.modal-box{
+  width:min(500px,100%);
+  background:var(--surface);
+  color:var(--text);
+  border:1px solid var(--border);
+  border-radius:15px;
+  padding:20px;
+}
+
+.modal-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.modal-close{
+  border:0;
+  background:transparent;
+  color:var(--muted);
+  cursor:pointer;
+  font-size:20px;
+}
+
+.setting{
+  padding:13px 0;
+  border-bottom:1px solid var(--border);
+}
+
+.setting:last-child{
+  border-bottom:0;
+}
+
+.setting label{
+  display:block;
+  font-size:14px;
+  margin-bottom:7px;
+}
+
+.setting select{
+  width:100%;
+  padding:9px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:var(--surface);
+  color:var(--text);
+}
+
+/* =========================
+   MOBILE
+========================= */
 
 @media(max-width:800px){
 
   .sidebar{
     position:fixed;
-    z-index:20;
-    left:-280px;
+    left:-290px;
     top:0;
     bottom:0;
   }
 
   .sidebar.open{
     left:0;
+    box-shadow:5px 0 25px rgba(0,0,0,.15);
   }
 
   .menu{
@@ -361,11 +577,19 @@ textarea{
   }
 
   .welcome{
-    margin-top:20vh;
+    margin-top:14vh;
   }
 
   .welcome h1{
     font-size:25px;
+  }
+
+  .suggestions{
+    grid-template-columns:1fr;
+  }
+
+  .model{
+    display:none;
   }
 }
 </style>
@@ -373,23 +597,43 @@ textarea{
 
 <body>
 
+<!-- =========================
+     SIDEBAR
+========================= -->
+
 <aside class="sidebar" id="sidebar">
 
-  <div class="logo">🤖 Wiener IA</div>
+  <div class="logo">
+    <div class="logo-icon">🤖</div>
+    Wiener IA
+  </div>
 
   <button class="new-chat" onclick="newChat()">
     ＋ Nouvelle conversation
   </button>
 
   <div class="history">
-    <div class="history-title">Historique</div>
+
+    <div class="history-title">
+      Historique
+    </div>
+
     <div id="historyList"></div>
+
   </div>
 
   <div class="sidebar-bottom">
 
+    <button class="sidebar-button" onclick="openSettings()">
+      ⚙️ Paramètres
+    </button>
+
     <button class="sidebar-button" onclick="toggleTheme()">
-      🌙 Changer de thème
+      🌙 Thème
+    </button>
+
+    <button class="sidebar-button" onclick="exportConversation()">
+      📤 Exporter
     </button>
 
     <button class="sidebar-button" onclick="clearAllHistory()">
@@ -400,34 +644,101 @@ textarea{
 
 </aside>
 
+
+<!-- =========================
+     MAIN
+========================= -->
+
 <main class="main">
 
   <header class="topbar">
-    <button class="menu" onclick="toggleSidebar()">☰</button>
-    <div class="title">Wiener IA</div>
+
+    <button class="menu" onclick="toggleSidebar()">
+      ☰
+    </button>
+
+    <div class="title">
+      Wiener IA
+    </div>
+
+    <select class="model" id="modelSelect">
+      <option value="gpt-4o-mini">
+        Wiener IA
+      </option>
+
+      <option value="gpt-4o">
+        Wiener IA Pro
+      </option>
+    </select>
+
   </header>
 
+
   <div id="chat"></div>
+
+
+  <!-- =========================
+       COMPOSER
+  ========================= -->
 
   <div class="composer-area">
 
     <div class="composer">
 
-      <div class="tools">
-        <button class="tool" title="Dictée vocale" onclick="startVoice()">🎤</button>
+      <div id="attachments"
+           class="attachments">
       </div>
 
-      <textarea
-        id="message"
-        rows="1"
-        placeholder="Écrivez un message..."
-        onkeydown="handleKey(event)"
-        oninput="resizeTextarea(this)"
-      ></textarea>
+      <div class="composer-row">
 
-      <button class="send" id="sendButton" onclick="sendMessage()">
-        ↑
-      </button>
+        <button
+          class="tool"
+          title="Joindre un fichier"
+          onclick="chooseFile()">
+          ＋
+        </button>
+
+        <input
+          id="fileInput"
+          type="file"
+          hidden
+          multiple
+          accept=".txt,.pdf,.doc,.docx,.csv,.json,.jpg,.jpeg,.png,.webp"
+          onchange="handleFiles(event)"
+        >
+
+        <button
+          class="tool"
+          title="Dictée vocale"
+          onclick="startVoice()">
+          🎤
+        </button>
+
+        <textarea
+          id="message"
+          rows="1"
+          placeholder="Message à Wiener IA..."
+          onkeydown="handleKey(event)"
+          oninput="resizeTextarea(this)"
+        ></textarea>
+
+        <button
+          class="send"
+          id="sendButton"
+          onclick="sendMessage()">
+          ↑
+        </button>
+
+      </div>
+
+      <div class="composer-footer">
+
+        <div
+          id="fileInfo"
+          class="file-info">
+        </div>
+
+      </div>
 
     </div>
 
@@ -439,26 +750,96 @@ textarea{
 
 </main>
 
+
+<!-- =========================
+     SETTINGS MODAL
+========================= -->
+
+<div class="modal" id="settingsModal">
+
+  <div class="modal-box">
+
+    <div class="modal-header">
+
+      <h2>Paramètres</h2>
+
+      <button
+        class="modal-close"
+        onclick="closeSettings()">
+        ×
+      </button>
+
+    </div>
+
+    <div class="setting">
+
+      <label>
+        Langue
+      </label>
+
+      <select id="languageSelect">
+        <option value="fr-FR">Français</option>
+        <option value="en-US">English</option>
+        <option value="es-ES">Español</option>
+      </select>
+
+    </div>
+
+    <div class="setting">
+
+      <label>
+        Lecture automatique des réponses
+      </label>
+
+      <select id="autoSpeak">
+        <option value="no">Désactivée</option>
+        <option value="yes">Activée</option>
+      </select>
+
+    </div>
+
+  </div>
+
+</div>
+
+
 <script>
 
-/* =========================
-   VARIABLES
-========================= */
+/* =========================================================
+   DONNÉES
+========================================================= */
 
 let conversations =
-  JSON.parse(localStorage.getItem("wiener_conversations") || "[]");
+  JSON.parse(
+    localStorage.getItem("wiener_conversations") || "[]"
+  );
 
 let currentConversation = null;
 
-const chat = document.getElementById("chat");
-const input = document.getElementById("message");
-const sendButton = document.getElementById("sendButton");
-const sidebar = document.getElementById("sidebar");
+let selectedFiles = [];
+
+const chat =
+  document.getElementById("chat");
+
+const input =
+  document.getElementById("message");
+
+const sendButton =
+  document.getElementById("sendButton");
+
+const sidebar =
+  document.getElementById("sidebar");
+
+const fileInput =
+  document.getElementById("fileInput");
+
+const attachments =
+  document.getElementById("attachments");
 
 
-/* =========================
+/* =========================================================
    INITIALISATION
-========================= */
+========================================================= */
 
 function init(){
 
@@ -483,22 +864,29 @@ function init(){
     newChat();
 
   }
+
 }
 
 
-/* =========================
+/* =========================================================
    NOUVELLE CONVERSATION
-========================= */
+========================================================= */
 
 function newChat(){
 
   currentConversation = {
+
     id:Date.now(),
+
     title:"Nouvelle conversation",
+
     messages:[]
+
   };
 
-  conversations.unshift(currentConversation);
+  conversations.unshift(
+    currentConversation
+  );
 
   saveConversations();
 
@@ -509,69 +897,132 @@ function newChat(){
   input.focus();
 
   closeSidebar();
+
 }
 
 
-/* =========================
+/* =========================================================
    HISTORIQUE
-========================= */
+========================================================= */
 
 function renderHistory(){
 
   const list =
-    document.getElementById("historyList");
+    document.getElementById(
+      "historyList"
+    );
 
   list.innerHTML = "";
 
-  conversations.forEach(conversation => {
+  conversations.forEach(
+    conversation => {
 
-    const item =
-      document.createElement("div");
+      const item =
+        document.createElement("div");
 
-    item.className = "history-item";
+      item.className =
+        "history-item" +
+        (
+          currentConversation &&
+          currentConversation.id === conversation.id
+            ? " active"
+            : ""
+        );
 
-    item.textContent =
-      conversation.title || "Conversation";
+      item.textContent =
+        conversation.title ||
+        "Conversation";
 
-    item.onclick = () => {
+      item.onclick = () => {
 
-      currentConversation =
-        conversation;
+        currentConversation =
+          conversation;
 
-      renderConversation();
+        renderHistory();
 
-      closeSidebar();
-    };
+        renderConversation();
 
-    list.appendChild(item);
+        closeSidebar();
 
-  });
+      };
+
+      list.appendChild(item);
+
+    }
+  );
+
 }
 
 
-/* =========================
-   AFFICHAGE CONVERSATION
-========================= */
+/* =========================================================
+   AFFICHAGE
+========================================================= */
 
 function renderConversation(){
 
   chat.innerHTML = "";
 
-  if(!currentConversation ||
-     currentConversation.messages.length === 0){
+  if(
+    !currentConversation ||
+    !currentConversation.messages ||
+    currentConversation.messages.length === 0
+  ){
 
     chat.innerHTML = `
+
       <div class="welcome">
-        <h1>Bonjour 👋</h1>
-        <p>Je suis Wiener IA. Comment puis-je vous aider ?</p>
+
+        <div class="welcome-logo">
+          🤖
+        </div>
+
+        <h1>
+          Bonjour 👋
+        </h1>
+
+        <p>
+          Je suis Wiener IA. Que voulez-vous faire ?
+        </p>
+
+        <div class="suggestions">
+
+          <button
+            class="suggestion"
+            onclick="useSuggestion('Explique-moi ce sujet simplement')">
+            📚 Explique-moi un sujet
+          </button>
+
+          <button
+            class="suggestion"
+            onclick="useSuggestion('Aide-moi à résoudre cet exercice étape par étape')">
+            🧮 Résoudre un exercice
+          </button>
+
+          <button
+            class="suggestion"
+            onclick="useSuggestion('Aide-moi à programmer un projet')">
+            💻 M'aider à programmer
+          </button>
+
+          <button
+            class="suggestion"
+            onclick="useSuggestion('Donne-moi des idées pour mon projet')">
+            💡 Trouver des idées
+          </button>
+
+        </div>
+
       </div>
+
     `;
 
     return;
+
   }
 
-  currentConversation.messages
-    .forEach((message,index) => {
+
+  currentConversation.messages.forEach(
+    (message,index) => {
 
       addMessageToScreen(
         message.role,
@@ -579,15 +1030,17 @@ function renderConversation(){
         index
       );
 
-    });
+    }
+  );
 
   scrollBottom();
+
 }
 
 
-/* =========================
+/* =========================================================
    AFFICHER MESSAGE
-========================= */
+========================================================= */
 
 function addMessageToScreen(
   role,
@@ -601,64 +1054,97 @@ function addMessageToScreen(
   wrapper.className =
     "message " + role;
 
+
   const container =
     document.createElement("div");
+
+  container.className =
+    "message-content";
+
 
   const bubble =
     document.createElement("div");
 
-  bubble.className = "bubble";
+  bubble.className =
+    "bubble";
 
-  bubble.textContent = content;
+  bubble.textContent =
+    content;
 
-  container.appendChild(bubble);
+
+  container.appendChild(
+    bubble
+  );
+
 
   if(role === "assistant"){
 
     const actions =
       document.createElement("div");
 
-    actions.className = "actions";
+    actions.className =
+      "actions";
 
     actions.innerHTML = `
-      <button class="action"
+
+      <button
+        class="action"
+        title="Copier"
         onclick="copyText(${index})">
         📋
       </button>
 
-      <button class="action"
+      <button
+        class="action"
+        title="Lire"
         onclick="speakText(${index})">
         🔊
       </button>
 
-      <button class="action"
+      <button
+        class="action"
+        title="Régénérer"
         onclick="regenerate(${index})">
         🔄
       </button>
 
-      <button class="action"
+      <button
+        class="action"
+        title="Bonne réponse"
         onclick="feedback('positive')">
         👍
       </button>
 
-      <button class="action"
+      <button
+        class="action"
+        title="Mauvaise réponse"
         onclick="feedback('negative')">
         👎
       </button>
+
     `;
 
-    container.appendChild(actions);
+    container.appendChild(
+      actions
+    );
+
   }
 
-  wrapper.appendChild(container);
 
-  chat.appendChild(wrapper);
+  wrapper.appendChild(
+    container
+  );
+
+  chat.appendChild(
+    wrapper
+  );
+
 }
 
 
-/* =========================
-   ENVOYER
-========================= */
+/* =========================================================
+   ENVOI
+========================================================= */
 
 async function sendMessage(){
 
@@ -667,24 +1153,33 @@ async function sendMessage(){
 
   if(!text) return;
 
+
   if(!currentConversation){
 
     newChat();
 
   }
 
-  if(currentConversation.title ===
-     "Nouvelle conversation"){
+
+  if(
+    currentConversation.title ===
+    "Nouvelle conversation"
+  ){
 
     currentConversation.title =
-      text.substring(0,35);
+      text.substring(0,40);
 
   }
 
+
   currentConversation.messages.push({
+
     role:"user",
+
     content:text
+
   });
+
 
   input.value = "";
 
@@ -698,33 +1193,60 @@ async function sendMessage(){
 
   sendButton.disabled = true;
 
+
   try{
 
+    /*
+      Les fichiers sont conservés côté interface
+      pour l'instant.
+
+      Ils seront réellement envoyés au serveur
+      à l'étape 2.
+    */
+
     const response =
-      await fetch("/api/chat",{
+      await fetch(
+        "/api/chat",
+        {
 
-        method:"POST",
+          method:"POST",
 
-        headers:{
-          "Content-Type":"application/json"
-        },
+          headers:{
+            "Content-Type":
+              "application/json"
+          },
 
-        body:JSON.stringify({
-          messages:
-            currentConversation.messages
-        })
+          body:JSON.stringify({
 
-      });
+            messages:
+              currentConversation.messages,
+
+            model:
+              document.getElementById(
+                "modelSelect"
+              ).value
+
+          })
+
+        }
+      );
+
 
     let data;
 
     try{
-      data = await response.json();
+
+      data =
+        await response.json();
+
     }catch{
+
       throw new Error(
         "Le serveur a renvoyé une réponse invalide."
       );
+
     }
+
 
     if(!response.ok){
 
@@ -735,6 +1257,7 @@ async function sendMessage(){
 
     }
 
+
     if(!data.answer){
 
       throw new Error(
@@ -743,10 +1266,15 @@ async function sendMessage(){
 
     }
 
+
     currentConversation.messages.push({
+
       role:"assistant",
+
       content:data.answer
+
     });
+
 
     saveConversations();
 
@@ -754,14 +1282,31 @@ async function sendMessage(){
 
     renderConversation();
 
+
+    const autoSpeak =
+      localStorage.getItem(
+        "wiener_auto_speak"
+      );
+
+    if(autoSpeak === "yes"){
+
+      speakContent(data.answer);
+
+    }
+
+
   }catch(error){
 
     hideTyping();
 
     currentConversation.messages.push({
+
       role:"assistant",
+
       content:
-        "❌ " + error.message
+        "❌ " +
+        error.message
+
     });
 
     saveConversations();
@@ -775,12 +1320,13 @@ async function sendMessage(){
     input.focus();
 
   }
+
 }
 
 
-/* =========================
-   INDICATEUR
-========================= */
+/* =========================================================
+   TYPING
+========================================================= */
 
 function showTyping(){
 
@@ -789,29 +1335,39 @@ function showTyping(){
   const wrapper =
     document.createElement("div");
 
-  wrapper.id = "typing";
+  wrapper.id =
+    "typing";
 
   wrapper.className =
     "message assistant";
 
   wrapper.innerHTML = `
+
     <div class="typing">
+
       <span class="dot"></span>
       <span class="dot"></span>
       <span class="dot"></span>
+
     </div>
+
   `;
 
-  chat.appendChild(wrapper);
+  chat.appendChild(
+    wrapper
+  );
 
   scrollBottom();
+
 }
 
 
 function hideTyping(){
 
   const typing =
-    document.getElementById("typing");
+    document.getElementById(
+      "typing"
+    );
 
   if(typing){
     typing.remove();
@@ -820,27 +1376,37 @@ function hideTyping(){
 }
 
 
-/* =========================
+/* =========================================================
    COPIER
-========================= */
+========================================================= */
 
-function copyText(index){
+async function copyText(index){
 
   const message =
     currentConversation.messages[index];
 
   if(!message) return;
 
-  navigator.clipboard.writeText(
-    message.content
-  );
+  try{
+
+    await navigator.clipboard.writeText(
+      message.content
+    );
+
+  }catch{
+
+    alert(
+      "Impossible de copier le texte."
+    );
+
+  }
 
 }
 
 
-/* =========================
-   LECTURE VOCALE
-========================= */
+/* =========================================================
+   VOIX
+========================================================= */
 
 function speakText(index){
 
@@ -849,33 +1415,56 @@ function speakText(index){
 
   if(!message) return;
 
-  if(!("speechSynthesis" in window)){
-    alert("La lecture vocale n'est pas disponible.");
+  speakContent(
+    message.content
+  );
+
+}
+
+
+function speakContent(text){
+
+  if(
+    !("speechSynthesis" in window)
+  ){
+
+    alert(
+      "La lecture vocale n'est pas disponible."
+    );
+
     return;
+
   }
 
   speechSynthesis.cancel();
 
   const utterance =
     new SpeechSynthesisUtterance(
-      message.content
+      text
     );
 
-  utterance.lang = "fr-FR";
+  utterance.lang =
+    document.getElementById(
+      "languageSelect"
+    ).value;
 
-  speechSynthesis.speak(utterance);
+  speechSynthesis.speak(
+    utterance
+  );
+
 }
 
 
-/* =========================
-   DICTÉE VOCALE
-========================= */
+/* =========================================================
+   DICTÉE
+========================================================= */
 
 function startVoice(){
 
   const SpeechRecognition =
     window.SpeechRecognition ||
     window.webkitSpeechRecognition;
+
 
   if(!SpeechRecognition){
 
@@ -884,48 +1473,92 @@ function startVoice(){
     );
 
     return;
+
   }
+
 
   const recognition =
     new SpeechRecognition();
 
-  recognition.lang = "fr-FR";
+  recognition.lang =
+    document.getElementById(
+      "languageSelect"
+    ).value;
 
-  recognition.interimResults = false;
+  recognition.interimResults =
+    false;
 
-  recognition.onresult = event => {
+  recognition.continuous =
+    false;
 
-    input.value +=
-      event.results[0][0].transcript;
 
-    resizeTextarea(input);
+  recognition.onresult =
+    event => {
 
-  };
+      const transcript =
+        event.results[0][0]
+          .transcript;
+
+      input.value +=
+        (
+          input.value
+            ? " "
+            : ""
+        ) +
+        transcript;
+
+      resizeTextarea(
+        input
+      );
+
+    };
+
+
+  recognition.onerror =
+    () => {
+
+      console.log(
+        "Erreur dictée vocale"
+      );
+
+    };
+
 
   recognition.start();
 
 }
 
 
-/* =========================
+/* =========================================================
    REGENERER
-========================= */
+========================================================= */
 
 async function regenerate(index){
 
-  if(index <= 0) return;
+  if(index <= 0)
+    return;
 
-  const assistantMessage =
+
+  const message =
     currentConversation.messages[index];
 
-  if(assistantMessage.role !== "assistant"){
+
+  if(
+    !message ||
+    message.role !== "assistant"
+  ){
+
     return;
+
   }
+
 
   currentConversation.messages =
     currentConversation.messages.slice(
-      0,index
+      0,
+      index
     );
+
 
   saveConversations();
 
@@ -933,26 +1566,43 @@ async function regenerate(index){
 
   showTyping();
 
+  sendButton.disabled =
+    true;
+
+
   try{
 
     const response =
-      await fetch("/api/chat",{
+      await fetch(
+        "/api/chat",
+        {
 
-        method:"POST",
+          method:"POST",
 
-        headers:{
-          "Content-Type":"application/json"
-        },
+          headers:{
+            "Content-Type":
+              "application/json"
+          },
 
-        body:JSON.stringify({
-          messages:
-            currentConversation.messages
-        })
+          body:JSON.stringify({
 
-      });
+            messages:
+              currentConversation.messages,
+
+            model:
+              document.getElementById(
+                "modelSelect"
+              ).value
+
+          })
+
+        }
+      );
+
 
     const data =
       await response.json();
+
 
     if(!response.ok){
 
@@ -963,78 +1613,351 @@ async function regenerate(index){
 
     }
 
+
+    if(!data.answer){
+
+      throw new Error(
+        "Réponse vide."
+      );
+
+    }
+
+
     currentConversation.messages.push({
+
       role:"assistant",
+
       content:data.answer
+
     });
+
 
     saveConversations();
 
     hideTyping();
 
     renderConversation();
+
 
   }catch(error){
 
     hideTyping();
 
     currentConversation.messages.push({
+
       role:"assistant",
-      content:"❌ " + error.message
+
+      content:
+        "❌ " +
+        error.message
+
     });
 
     saveConversations();
 
     renderConversation();
 
+  }finally{
+
+    sendButton.disabled =
+      false;
+
   }
 
 }
 
 
-/* =========================
+/* =========================================================
+   FICHIERS
+========================================================= */
+
+function chooseFile(){
+
+  fileInput.click();
+
+}
+
+
+function handleFiles(event){
+
+  const files =
+    Array.from(
+      event.target.files
+    );
+
+
+  selectedFiles =
+    selectedFiles.concat(
+      files
+    );
+
+
+  renderAttachments();
+
+}
+
+
+function renderAttachments(){
+
+  attachments.innerHTML = "";
+
+  selectedFiles.forEach(
+    (file,index) => {
+
+      const element =
+        document.createElement(
+          "div"
+        );
+
+      element.className =
+        "attachment";
+
+      element.innerHTML = `
+
+        <span>
+          📎 ${escapeHTML(file.name)}
+        </span>
+
+        <button
+          class="remove-file"
+          onclick="removeFile(${index})">
+          ×
+        </button>
+
+      `;
+
+      attachments.appendChild(
+        element
+      );
+
+    }
+  );
+
+
+  const info =
+    document.getElementById(
+      "fileInfo"
+    );
+
+  if(selectedFiles.length){
+
+    info.textContent =
+      selectedFiles.length +
+      " fichier(s) sélectionné(s)";
+
+  }else{
+
+    info.textContent =
+      "";
+
+  }
+
+}
+
+
+function removeFile(index){
+
+  selectedFiles.splice(
+    index,
+    1
+  );
+
+  renderAttachments();
+
+}
+
+
+/* =========================================================
+   SUGGESTION
+========================================================= */
+
+function useSuggestion(text){
+
+  input.value =
+    text;
+
+  resizeTextarea(
+    input
+  );
+
+  input.focus();
+
+}
+
+
+/* =========================================================
    FEEDBACK
-========================= */
+========================================================= */
 
 function feedback(type){
 
   console.log(
-    "Feedback Wiener IA :",
+    "Feedback Wiener IA:",
     type
   );
 
 }
 
 
-/* =========================
-   THEME
-========================= */
+/* =========================================================
+   THÈME
+========================================================= */
 
 function toggleTheme(){
 
-  document.body.classList.toggle("dark");
+  document.body.classList.toggle(
+    "dark"
+  );
 
   localStorage.setItem(
+
     "wiener_theme",
-    document.body.classList.contains("dark")
+
+    document.body.classList.contains(
+      "dark"
+    )
       ? "dark"
       : "light"
+
   );
 
 }
 
 
-/* =========================
-   EFFACER HISTORIQUE
-========================= */
+/* =========================================================
+   PARAMÈTRES
+========================================================= */
+
+function openSettings(){
+
+  document
+    .getElementById(
+      "settingsModal"
+    )
+    .classList.add(
+      "open"
+    );
+
+}
+
+
+function closeSettings(){
+
+  document
+    .getElementById(
+      "settingsModal"
+    )
+    .classList.remove(
+      "open"
+    );
+
+}
+
+
+/* =========================================================
+   EXPORT
+========================================================= */
+
+function exportConversation(){
+
+  if(
+    !currentConversation ||
+    currentConversation.messages.length === 0
+  ){
+
+    alert(
+      "Cette conversation est vide."
+    );
+
+    return;
+
+  }
+
+
+  let content =
+    "# " +
+    currentConversation.title +
+    "\n\n";
+
+
+  currentConversation.messages.forEach(
+    message => {
+
+      const name =
+        message.role === "user"
+          ? "Vous"
+          : "Wiener IA";
+
+      content +=
+        "## " +
+        name +
+        "\n\n" +
+        message.content +
+        "\n\n";
+
+    }
+  );
+
+
+  const blob =
+    new Blob(
+      [content],
+      {
+        type:"text/markdown"
+      }
+    );
+
+
+  const url =
+    URL.createObjectURL(
+      blob
+    );
+
+
+  const a =
+    document.createElement(
+      "a"
+    );
+
+  a.href =
+    url;
+
+  a.download =
+    (
+      currentConversation.title
+        .replace(
+          /[^a-z0-9]/gi,
+          "_"
+        ) ||
+      "conversation"
+    ) +
+    ".md";
+
+  a.click();
+
+  URL.revokeObjectURL(
+    url
+  );
+
+}
+
+
+/* =========================================================
+   SUPPRESSION HISTORIQUE
+========================================================= */
 
 function clearAllHistory(){
 
-  if(!confirm(
-    "Supprimer toutes les conversations ?"
-  )){
+  if(
+    !confirm(
+      "Supprimer toutes les conversations ?"
+    )
+  ){
+
     return;
+
   }
+
 
   conversations = [];
 
@@ -1047,15 +1970,20 @@ function clearAllHistory(){
 }
 
 
-/* =========================
+/* =========================================================
    SAUVEGARDE
-========================= */
+========================================================= */
 
 function saveConversations(){
 
   localStorage.setItem(
+
     "wiener_conversations",
-    JSON.stringify(conversations)
+
+    JSON.stringify(
+      conversations
+    )
+
   );
 
   renderHistory();
@@ -1063,14 +1991,16 @@ function saveConversations(){
 }
 
 
-/* =========================
+/* =========================================================
    CLAVIER
-========================= */
+========================================================= */
 
 function handleKey(event){
 
-  if(event.key === "Enter" &&
-     !event.shiftKey){
+  if(
+    event.key === "Enter" &&
+    !event.shiftKey
+  ){
 
     event.preventDefault();
 
@@ -1081,59 +2011,160 @@ function handleKey(event){
 }
 
 
-/* =========================
+/* =========================================================
    TEXTAREA
-========================= */
+========================================================= */
 
 function resizeTextarea(element){
 
-  element.style.height = "auto";
+  element.style.height =
+    "auto";
 
   element.style.height =
     Math.min(
       element.scrollHeight,
       180
-    ) + "px";
+    ) +
+    "px";
 
 }
 
 
-/* =========================
+/* =========================================================
    SCROLL
-========================= */
+========================================================= */
 
 function scrollBottom(){
 
-  setTimeout(() => {
+  setTimeout(
+    () => {
 
-    chat.scrollTop =
-      chat.scrollHeight;
+      chat.scrollTop =
+        chat.scrollHeight;
 
-  },50);
+    },
+    50
+  );
 
 }
 
 
-/* =========================
-   SIDEBAR MOBILE
-========================= */
+/* =========================================================
+   SIDEBAR
+========================================================= */
 
 function toggleSidebar(){
 
-  sidebar.classList.toggle("open");
+  sidebar.classList.toggle(
+    "open"
+  );
 
 }
+
 
 function closeSidebar(){
 
-  sidebar.classList.remove("open");
+  sidebar.classList.remove(
+    "open"
+  );
 
 }
 
 
-/* =========================
+/* =========================================================
+   ESCAPE HTML
+========================================================= */
+
+function escapeHTML(text){
+
+  return text
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+    .replace(
+      /</g,
+      "&lt;"
+    )
+    .replace(
+      />/g,
+      "&gt;"
+    )
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+    .replace(
+      /'/g,
+      "&#039;"
+    );
+
+}
+
+
+/* =========================================================
+   PARAMÈTRES
+========================================================= */
+
+document
+  .getElementById(
+    "languageSelect"
+  )
+  .value =
+    localStorage.getItem(
+      "wiener_language"
+    ) ||
+    "fr-FR";
+
+
+document
+  .getElementById(
+    "autoSpeak"
+  )
+  .value =
+    localStorage.getItem(
+      "wiener_auto_speak"
+    ) ||
+    "no";
+
+
+document
+  .getElementById(
+    "languageSelect"
+  )
+  .addEventListener(
+    "change",
+    event => {
+
+      localStorage.setItem(
+        "wiener_language",
+        event.target.value
+      );
+
+    }
+  );
+
+
+document
+  .getElementById(
+    "autoSpeak"
+  )
+  .addEventListener(
+    "change",
+    event => {
+
+      localStorage.setItem(
+        "wiener_auto_speak",
+        event.target.value
+      );
+
+    }
+  );
+
+
+/* =========================================================
    DÉMARRAGE
-========================= */
+========================================================= */
 
 init();
 
