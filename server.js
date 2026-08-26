@@ -1,4 +1,3 @@
-```javascript
 const express = require("express");
 const cors = require("cors");
 const OpenAI = require("openai");
@@ -7,31 +6,37 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json({ limit: "20mb" }));
 app.use(express.static(__dirname));
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-// Test du serveur
+/* =========================
+   HEALTH
+========================= */
+
 app.get("/health", (req, res) => {
   res.json({
     status: "ok",
-    openai_key: !!process.env.OPENAI_API_KEY
+    openai_key: Boolean(process.env.OPENAI_API_KEY)
   });
 });
 
-// Chat
+/* =========================
+   CHAT
+========================= */
+
 app.post("/api/chat", async (req, res) => {
   try {
-    const { messages } = req.body;
-
     if (!process.env.OPENAI_API_KEY) {
       return res.status(500).json({
-        error: "OPENAI_API_KEY n'est pas configurée."
+        error: "OPENAI_API_KEY n'est pas configurée sur Render."
       });
     }
+
+    const { messages, model } = req.body;
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return res.status(400).json({
@@ -39,56 +44,113 @@ app.post("/api/chat", async (req, res) => {
       });
     }
 
+    const allowedModels = [
+      "gpt-4o-mini",
+      "gpt-4o"
+    ];
+
+    const selectedModel =
+      allowedModels.includes(model)
+        ? model
+        : "gpt-4o-mini";
+
     const cleanMessages = messages
-      .filter(m =>
-        m &&
-        (m.role === "user" || m.role === "assistant") &&
-        typeof m.content === "string" &&
-        m.content.trim()
+      .filter(message =>
+        message &&
+        ["user", "assistant"].includes(message.role) &&
+        typeof message.content === "string" &&
+        message.content.trim()
       )
-      .slice(-30);
+      .slice(-40);
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            `Tu es Wiener IA, un assistant intelligent.
-Réponds en français par défaut.
-Sois clair, précis, pédagogique et utile.
-Tu peux utiliser Markdown pour structurer tes réponses.
-Si tu ne connais pas une information, indique-le honnêtement.
-Ne prétends pas avoir accès à Internet, aux fichiers ou aux appareils de l'utilisateur si ce n'est pas réellement disponible.`
-        },
-        ...cleanMessages
-      ],
-      temperature: 0.7
-    });
+    const systemMessage = {
+      role: "system",
+      content: `
+Tu es Wiener IA, un assistant intelligent moderne.
 
-    const answer = response.choices?.[0]?.message?.content;
+Règles :
+- Réponds en français par défaut.
+- Si l'utilisateur écrit dans une autre langue, réponds dans cette langue si c'est approprié.
+- Sois précis, clair et pédagogique.
+- Structure les longues réponses avec Markdown.
+- Utilise des listes et des titres lorsque cela améliore la compréhension.
+- Pour le code, utilise des blocs Markdown.
+- Ne prétends jamais avoir accès à Internet, à un fichier, à une caméra, à un microphone ou à un appareil si cette capacité n'est pas réellement disponible.
+- Si une information est incertaine, indique-le clairement.
+- Ne fabrique pas de sources ou de faits.
+- Pour les exercices scolaires, explique le raisonnement étape par étape.
+- Pour les questions de programmation, donne des solutions directement utilisables.
+      `.trim()
+    };
+
+    const response =
+      await openai.chat.completions.create({
+        model: selectedModel,
+        messages: [
+          systemMessage,
+          ...cleanMessages
+        ],
+        temperature: 0.7
+      });
+
+    const answer =
+      response.choices?.[0]?.message?.content;
 
     if (!answer) {
       return res.status(500).json({
-        error: "Aucune réponse reçue de l'IA."
+        error: "Wiener IA n'a retourné aucune réponse."
       });
     }
 
     res.json({
-      answer
+      answer,
+      model: selectedModel
     });
 
   } catch (error) {
-    console.error("ERREUR OPENAI :", error);
+
+    console.error("OPENAI ERROR:", error);
+
+    let message =
+      "Une erreur est survenue avec Wiener IA.";
+
+    if (error?.status === 401) {
+      message =
+        "La clé OpenAI est invalide ou incorrecte.";
+    }
+
+    if (error?.status === 429) {
+      message =
+        "La limite d'utilisation de l'API a été atteinte.";
+    }
+
+    if (error?.status === 400) {
+      message =
+        error?.message || "Requête invalide.";
+    }
 
     res.status(500).json({
-      error: error?.message || "Erreur inconnue avec OpenAI."
+      error: message
     });
   }
 });
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Wiener IA démarré sur le port ${PORT}`);
-});
-```
+/* =========================
+   404 API
+========================= */
 
+app.use("/api", (req, res) => {
+  res.status(404).json({
+    error: "Route API introuvable."
+  });
+});
+
+/* =========================
+   START
+========================= */
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(
+    `Wiener IA démarré sur le port ${PORT}`
+  );
+});
