@@ -8,125 +8,164 @@
 <title>Wiener IA</title>
 
 <style>
-:root{
-  --bg:#ffffff;
-  --panel:#f8f9fb;
-  --surface:#ffffff;
-  --surface-hover:#f1f3f5;
-  --text:#17181a;
-  --muted:#6b7078;
-  --border:#e4e6e9;
-  --accent:#111214;
-  --accent-text:#ffffff;
-  --user:#f0f1f3;
-  --danger:#d93025;
-  --shadow:0 8px 30px rgba(0,0,0,.06);
-}
-
-body.dark{
-  --bg:#18191b;
-  --panel:#202123;
-  --surface:#18191b;
-  --surface-hover:#292b2e;
-  --text:#f5f5f5;
-  --muted:#a5a8ad;
-  --border:#34363a;
-  --accent:#f4f4f5;
-  --accent-text:#17181a;
-  --user:#2b2d30;
-  --shadow:0 8px 30px rgba(0,0,0,.25);
-}
+/* =========================================================
+   WIENER IA — INTERFACE V2
+========================================================= */
 
 *{
   box-sizing:border-box;
 }
 
+:root{
+  --bg:#ffffff;
+  --sidebar:#f8f8fa;
+  --surface:#ffffff;
+  --surface-soft:#f4f4f6;
+  --surface-hover:#ececef;
+
+  --text:#17171a;
+  --muted:#777780;
+
+  --border:#e5e5e9;
+
+  --accent:#5b5ce2;
+  --accent-hover:#4c4dcc;
+
+  --user:#f1f1f4;
+
+  --danger:#d92d20;
+
+  --shadow:0 4px 20px rgba(0,0,0,.06);
+}
+
+body.dark{
+  --bg:#171719;
+  --sidebar:#111113;
+  --surface:#1c1c1f;
+  --surface-soft:#29292d;
+  --surface-hover:#303035;
+
+  --text:#f5f5f7;
+  --muted:#a1a1aa;
+
+  --border:#34343a;
+
+  --accent:#7778f2;
+  --accent-hover:#898af8;
+
+  --user:#2b2b30;
+
+  --shadow:0 5px 25px rgba(0,0,0,.25);
+}
+
 html,
 body{
-  margin:0;
   width:100%;
   height:100%;
-  overflow:hidden;
+  margin:0;
 }
 
 body{
   font-family:
     Inter,
-    system-ui,
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
+    Roboto,
     Arial,
     sans-serif;
+
   background:var(--bg);
   color:var(--text);
+
+  overflow:hidden;
 }
 
-/* =========================
+/* =========================================================
    APP
-========================= */
+========================================================= */
 
 .app{
-  display:flex;
   width:100%;
   height:100vh;
+  display:flex;
 }
 
-/* =========================
+/* =========================================================
    SIDEBAR
-========================= */
+========================================================= */
 
 .sidebar{
-  width:270px;
-  height:100%;
-  background:var(--panel);
+  width:275px;
+  height:100vh;
+
+  background:var(--sidebar);
   border-right:1px solid var(--border);
+
   display:flex;
   flex-direction:column;
-  padding:12px;
+
+  padding:14px;
+
   flex-shrink:0;
-  transition:transform .25s ease;
-  z-index:100;
+
+  transition:
+    transform .25s ease,
+    width .25s ease;
 }
 
 .brand{
   display:flex;
   align-items:center;
   gap:10px;
-  padding:12px 10px 18px;
+
+  padding:10px 8px 18px;
+
+  font-weight:700;
+  font-size:18px;
 }
 
 .brand-symbol{
   width:34px;
   height:34px;
-  border-radius:10px;
+
+  border-radius:11px;
+
+  background:var(--accent);
+  color:white;
+
   display:flex;
   align-items:center;
   justify-content:center;
-  background:var(--accent);
-  color:var(--accent-text);
-  font-size:18px;
+
+  font-size:17px;
   font-weight:800;
+
+  box-shadow:
+    0 5px 15px rgba(91,92,226,.25);
 }
 
 .brand-name{
-  font-size:18px;
-  font-weight:700;
   letter-spacing:-.3px;
 }
 
 .new-chat{
   width:100%;
-  height:44px;
+
   border:1px solid var(--border);
   background:var(--surface);
+
   color:var(--text);
+
   border-radius:12px;
-  cursor:pointer;
+
+  padding:11px 13px;
+
   font-size:14px;
   font-weight:600;
-  text-align:left;
-  padding:0 14px;
+
+  cursor:pointer;
+
   transition:.18s;
 }
 
@@ -137,35 +176,51 @@ body{
 
 .history{
   flex:1;
-  min-height:0;
   overflow-y:auto;
   margin-top:18px;
 }
 
 .history-label{
-  padding:8px 10px;
-  color:var(--muted);
+  padding:8px 9px;
+
   font-size:11px;
   font-weight:700;
+
+  color:var(--muted);
+
   text-transform:uppercase;
-  letter-spacing:.7px;
+  letter-spacing:.8px;
 }
 
 .history-item{
+  position:relative;
+
   padding:10px 11px;
-  margin:2px 0;
-  border-radius:9px;
-  font-size:13px;
+
+  border-radius:10px;
+
   cursor:pointer;
+
+  margin-bottom:3px;
+
+  font-size:13px;
+
+  color:var(--text);
+
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
+
   transition:.15s;
 }
 
-.history-item:hover,
+.history-item:hover{
+  background:var(--surface-hover);
+}
+
 .history-item.active{
   background:var(--surface-hover);
+  font-weight:600;
 }
 
 .sidebar-bottom{
@@ -173,63 +228,89 @@ body{
   padding-top:10px;
 }
 
-.side-button{
+.sidebar-button{
   width:100%;
+
+  display:flex;
+  align-items:center;
+  gap:10px;
+
   border:0;
   background:transparent;
+
   color:var(--text);
-  height:40px;
+
+  padding:10px 9px;
+
   border-radius:9px;
-  text-align:left;
-  padding:0 10px;
+
   cursor:pointer;
+
   font-size:13px;
+
+  text-align:left;
+
+  transition:.15s;
 }
 
-.side-button:hover{
+.sidebar-button:hover{
   background:var(--surface-hover);
 }
 
-/* =========================
+/* =========================================================
    MAIN
-========================= */
+========================================================= */
 
 .main{
   flex:1;
   min-width:0;
-  height:100%;
+
+  height:100vh;
+
   display:flex;
   flex-direction:column;
+
+  background:var(--bg);
 }
 
-/* =========================
+/* =========================================================
    TOPBAR
-========================= */
+========================================================= */
 
 .topbar{
   height:60px;
+
   flex-shrink:0;
+
   display:flex;
   align-items:center;
-  padding:0 22px;
+
+  padding:0 20px;
+
   border-bottom:1px solid var(--border);
-  background:var(--bg);
+
   gap:12px;
 }
 
-.menu{
+.mobile-menu{
   display:none;
-  width:40px;
-  height:40px;
+
+  width:38px;
+  height:38px;
+
   border:0;
   background:transparent;
+
   color:var(--text);
-  font-size:22px;
-  cursor:pointer;
+
   border-radius:9px;
+
+  cursor:pointer;
+
+  font-size:20px;
 }
 
-.menu:hover{
+.mobile-menu:hover{
   background:var(--surface-hover);
 }
 
@@ -238,213 +319,282 @@ body{
   font-weight:700;
 }
 
-.status{
+.top-status{
   display:flex;
   align-items:center;
   gap:6px;
+
   color:var(--muted);
+
   font-size:12px;
 }
 
 .status-dot{
   width:7px;
   height:7px;
+
   border-radius:50%;
-  background:#38a169;
+
+  background:#43a047;
 }
 
 .top-actions{
   margin-left:auto;
+
   display:flex;
   align-items:center;
-  gap:6px;
+  gap:4px;
 }
 
 .top-button{
-  border:1px solid var(--border);
-  background:var(--surface);
-  color:var(--text);
+  border:0;
+  background:transparent;
+
+  color:var(--muted);
+
+  width:36px;
+  height:36px;
+
   border-radius:9px;
-  height:34px;
-  padding:0 10px;
+
   cursor:pointer;
-  font-size:12px;
+
+  font-size:16px;
 }
 
 .top-button:hover{
   background:var(--surface-hover);
+  color:var(--text);
 }
 
-/* =========================
+/* =========================================================
    CHAT
-========================= */
+========================================================= */
 
 .chat{
   flex:1;
-  overflow-y:auto;
-  padding:35px 20px 20px;
-  scroll-behavior:smooth;
-}
 
-.chat-inner{
-  width:min(850px,100%);
-  margin:auto;
+  overflow-y:auto;
+
+  padding:
+    30px
+    max(18px, calc((100% - 900px) / 2))
+    40px;
+
+  scroll-behavior:smooth;
 }
 
 .message{
   display:flex;
-  margin-bottom:28px;
-  animation:messageIn .18s ease;
-}
 
-@keyframes messageIn{
-  from{
-    opacity:0;
-    transform:translateY(5px);
-  }
-  to{
-    opacity:1;
-    transform:translateY(0);
-  }
+  width:100%;
+
+  margin-bottom:30px;
 }
 
 .message.user{
   justify-content:flex-end;
 }
 
-.message.assistant{
-  justify-content:flex-start;
-}
-
 .message-content{
+  width:auto;
   max-width:820px;
   min-width:0;
 }
 
 .user .message-content{
-  max-width:min(720px,85%);
+  max-width:min(720px,80%);
 }
 
 .bubble{
-  line-height:1.65;
+  line-height:1.7;
+
   font-size:15px;
+
   overflow-wrap:anywhere;
 }
 
 .user .bubble{
   background:var(--user);
+
   border-radius:18px;
-  padding:11px 15px;
+
+  padding:12px 16px;
+
   white-space:pre-wrap;
 }
 
 .assistant .bubble{
   padding:2px 0;
+
+  white-space:normal;
 }
 
-/* =========================
+/* =========================================================
    MARKDOWN
-========================= */
+========================================================= */
 
-.assistant .bubble h1,
-.assistant .bubble h2,
-.assistant .bubble h3{
-  margin:18px 0 8px;
-  line-height:1.25;
+.bubble h1,
+.bubble h2,
+.bubble h3{
+  margin:
+    20px 0 10px;
+
+  line-height:1.3;
 }
 
-.assistant .bubble h1{
-  font-size:25px;
+.bubble h1{
+  font-size:24px;
 }
 
-.assistant .bubble h2{
+.bubble h2{
   font-size:20px;
 }
 
-.assistant .bubble h3{
+.bubble h3{
   font-size:17px;
 }
 
-.assistant .bubble p{
-  margin:8px 0;
+.bubble p{
+  margin:0 0 12px;
 }
 
-.assistant .bubble ul,
-.assistant .bubble ol{
+.bubble p:last-child{
+  margin-bottom:0;
+}
+
+.bubble ul,
+.bubble ol{
+  margin:
+    8px 0 14px;
+
   padding-left:25px;
 }
 
-.assistant .bubble li{
-  margin:5px 0;
+.bubble li{
+  margin-bottom:5px;
 }
 
-.assistant .bubble code{
-  background:var(--surface-hover);
+.bubble strong{
+  font-weight:700;
+}
+
+.bubble code{
+  background:var(--surface-soft);
+
   border:1px solid var(--border);
+
   border-radius:5px;
+
   padding:2px 5px;
+
   font-family:
-    ui-monospace,
-    SFMono-Regular,
-    Menlo,
+    "SFMono-Regular",
+    Consolas,
     monospace;
+
   font-size:13px;
 }
 
 .code-block{
   position:relative;
-  margin:12px 0;
-  border:1px solid var(--border);
-  background:var(--panel);
-  border-radius:12px;
-  overflow:auto;
+
+  margin:14px 0;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:11px;
+
+  overflow:hidden;
+
+  background:#111;
+
+  color:#eee;
+}
+
+.code-header{
+  height:35px;
+
+  display:flex;
+  align-items:center;
+
+  padding:0 10px;
+
+  background:#1d1d20;
+
+  border-bottom:1px solid #333;
+
+  font-size:11px;
+
+  color:#aaa;
+}
+
+.code-copy{
+  margin-left:auto;
+
+  border:0;
+
+  background:transparent;
+
+  color:#aaa;
+
+  cursor:pointer;
+
+  padding:4px 8px;
+
+  border-radius:5px;
+}
+
+.code-copy:hover{
+  background:#303035;
+  color:white;
 }
 
 .code-block pre{
   margin:0;
+
   padding:15px;
-  padding-top:42px;
-  overflow:auto;
+
+  overflow-x:auto;
+
+  font-family:
+    "SFMono-Regular",
+    Consolas,
+    monospace;
+
+  font-size:13px;
+
+  line-height:1.55;
 }
 
-.code-block code{
-  border:0 !important;
-  background:transparent !important;
-  padding:0 !important;
-  white-space:pre;
-}
-
-.copy-code{
-  position:absolute;
-  right:8px;
-  top:8px;
-  border:1px solid var(--border);
-  background:var(--surface);
-  color:var(--text);
-  border-radius:7px;
-  padding:5px 8px;
-  cursor:pointer;
-  font-size:11px;
-}
-
-/* =========================
+/* =========================================================
    ACTIONS
-========================= */
+========================================================= */
 
 .actions{
   display:flex;
-  gap:3px;
-  margin-top:7px;
+  align-items:center;
+
+  gap:2px;
+
+  margin-top:8px;
 }
 
 .action{
   border:0;
   background:transparent;
+
   color:var(--muted);
-  cursor:pointer;
-  width:32px;
+
+  width:31px;
   height:30px;
+
   border-radius:7px;
+
+  cursor:pointer;
+
+  font-size:14px;
 }
 
 .action:hover{
@@ -452,22 +602,145 @@ body{
   color:var(--text);
 }
 
-/* =========================
+.message-time{
+  font-size:10px;
+  color:var(--muted);
+  margin-top:5px;
+}
+
+/* =========================================================
+   WELCOME
+========================================================= */
+
+.welcome{
+  max-width:850px;
+
+  min-height:70vh;
+
+  margin:
+    5vh auto 0;
+
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+
+  text-align:center;
+}
+
+.welcome-symbol{
+  width:62px;
+  height:62px;
+
+  border-radius:19px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  background:var(--accent);
+
+  color:white;
+
+  font-size:28px;
+  font-weight:800;
+
+  box-shadow:
+    0 10px 30px rgba(91,92,226,.22);
+}
+
+.welcome h1{
+  font-size:34px;
+
+  letter-spacing:-1px;
+
+  margin:
+    20px 0 8px;
+}
+
+.welcome p{
+  margin:0;
+
+  color:var(--muted);
+
+  font-size:15px;
+}
+
+.suggestions{
+  width:100%;
+
+  display:grid;
+
+  grid-template-columns:
+    repeat(2,1fr);
+
+  gap:10px;
+
+  margin-top:32px;
+}
+
+.suggestion{
+  min-height:82px;
+
+  text-align:left;
+
+  padding:15px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:13px;
+
+  background:var(--surface);
+
+  color:var(--text);
+
+  cursor:pointer;
+
+  transition:
+    transform .15s,
+    background .15s;
+}
+
+.suggestion:hover{
+  background:var(--surface-hover);
+
+  transform:translateY(-2px);
+}
+
+.suggestion-title{
+  font-size:14px;
+  font-weight:650;
+  margin-bottom:5px;
+}
+
+.suggestion-description{
+  color:var(--muted);
+  font-size:12px;
+}
+
+/* =========================================================
    TYPING
-========================= */
+========================================================= */
 
 .typing{
   display:flex;
+  align-items:center;
   gap:5px;
+
   padding:8px 0;
 }
 
 .dot{
   width:7px;
   height:7px;
+
   border-radius:50%;
+
   background:var(--muted);
-  animation:pulse 1.2s infinite;
+
+  animation:
+    typing 1.2s infinite;
 }
 
 .dot:nth-child(2){
@@ -475,266 +748,419 @@ body{
 }
 
 .dot:nth-child(3){
-  animation-delay:.3s;
+  animation-delay:.30s;
 }
 
-@keyframes pulse{
+@keyframes typing{
   0%,80%,100%{
-    opacity:.25;
+    transform:translateY(0);
+    opacity:.3;
   }
+
   40%{
+    transform:translateY(-4px);
     opacity:1;
   }
 }
 
-/* =========================
-   WELCOME
-========================= */
+/* =========================================================
+   IMAGE RESULT
+========================================================= */
 
-.welcome{
-  max-width:850px;
-  margin:13vh auto 0;
-  text-align:center;
-  padding:0 10px;
-}
+.generated-image{
+  max-width:100%;
 
-.welcome-symbol{
-  width:58px;
-  height:58px;
-  border-radius:17px;
-  background:var(--accent);
-  color:var(--accent-text);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  margin:auto;
-  font-size:26px;
-  font-weight:800;
-}
+  border-radius:14px;
 
-.welcome h1{
-  margin:18px 0 7px;
-  font-size:32px;
-  letter-spacing:-1px;
-}
+  margin-top:10px;
 
-.welcome p{
-  color:var(--muted);
-  margin:0;
-  font-size:14px;
-}
+  display:block;
 
-.suggestions{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:10px;
-  margin-top:28px;
-}
-
-.suggestion{
   border:1px solid var(--border);
-  background:var(--surface);
-  color:var(--text);
-  border-radius:12px;
-  padding:15px;
-  text-align:left;
-  cursor:pointer;
-  transition:.15s;
-  font-size:13px;
+
+  box-shadow:var(--shadow);
 }
 
-.suggestion:hover{
-  background:var(--surface-hover);
-  transform:translateY(-1px);
+/* =========================================================
+   SEARCH SOURCES
+========================================================= */
+
+.sources{
+  margin-top:15px;
+
+  display:flex;
+  flex-direction:column;
+
+  gap:6px;
 }
 
-/* =========================
+.source-title{
+  color:var(--muted);
+
+  font-size:11px;
+
+  font-weight:700;
+
+  text-transform:uppercase;
+}
+
+.source-link{
+  color:var(--accent);
+
+  font-size:12px;
+
+  text-decoration:none;
+
+  overflow:hidden;
+
+  white-space:nowrap;
+
+  text-overflow:ellipsis;
+}
+
+.source-link:hover{
+  text-decoration:underline;
+}
+
+/* =========================================================
    COMPOSER
-========================= */
+========================================================= */
 
 .composer-area{
   flex-shrink:0;
-  padding:8px 20px 15px;
-  background:var(--bg);
+
+  padding:
+    8px
+    max(15px, calc((100% - 930px) / 2))
+    16px;
 }
 
 .composer{
-  width:min(900px,100%);
-  margin:auto;
-  border:1px solid var(--border);
+  position:relative;
+
+  width:100%;
+
   background:var(--surface);
+
+  border:
+    1px solid var(--border);
+
   border-radius:17px;
+
   box-shadow:var(--shadow);
-  padding:7px;
+
+  padding:8px;
 }
 
 .attachments{
   display:flex;
+
   flex-wrap:wrap;
+
   gap:6px;
-  padding:3px;
+
+  padding:
+    3px 5px 7px;
 }
 
 .attachment{
   display:flex;
   align-items:center;
   gap:7px;
-  background:var(--surface-hover);
-  border:1px solid var(--border);
-  border-radius:8px;
+
+  max-width:240px;
+
+  background:var(--surface-soft);
+
+  border:
+    1px solid var(--border);
+
+  border-radius:9px;
+
   padding:6px 8px;
+
   font-size:11px;
+}
+
+.attachment-name{
+  overflow:hidden;
+
+  text-overflow:ellipsis;
+
+  white-space:nowrap;
 }
 
 .remove-file{
   border:0;
+
   background:transparent;
+
   color:var(--muted);
+
   cursor:pointer;
+
+  font-size:14px;
 }
 
 .composer-row{
   display:flex;
+
   align-items:flex-end;
-  gap:3px;
+
+  gap:4px;
 }
 
 .tool{
   flex-shrink:0;
-  width:40px;
-  height:40px;
+
+  width:39px;
+  height:39px;
+
   border:0;
+
   background:transparent;
+
   color:var(--muted);
+
   border-radius:9px;
+
   cursor:pointer;
+
   font-size:17px;
+
+  transition:.15s;
 }
 
 .tool:hover{
   background:var(--surface-hover);
+
   color:var(--text);
 }
 
 .textarea{
   flex:1;
-  min-width:0;
-  max-height:180px;
-  min-height:42px;
+
   resize:none;
+
   border:0;
   outline:0;
+
   background:transparent;
+
   color:var(--text);
+
   font-family:inherit;
-  font-size:14px;
+
+  font-size:15px;
+
   line-height:1.5;
-  padding:10px 8px;
+
+  min-height:40px;
+
+  max-height:180px;
+
+  padding:9px 7px;
+
+  overflow-y:auto;
+}
+
+.textarea::placeholder{
+  color:var(--muted);
 }
 
 .send{
+  flex-shrink:0;
+
   width:40px;
   height:40px;
-  flex-shrink:0;
+
   border:0;
+
   border-radius:10px;
+
   background:var(--accent);
-  color:var(--accent-text);
+
+  color:white;
+
   cursor:pointer;
+
   font-size:18px;
+
   transition:.15s;
 }
 
-.send:hover{
-  transform:scale(1.03);
+.send:hover:not(:disabled){
+  background:var(--accent-hover);
+
+  transform:translateY(-1px);
 }
 
 .send:disabled{
-  opacity:.35;
+  opacity:.45;
   cursor:not-allowed;
-  transform:none;
 }
 
-.file-info{
-  color:var(--muted);
-  font-size:11px;
-  padding:3px 7px;
-}
+.composer-info{
+  display:flex;
 
-.disclaimer{
-  width:min(900px,100%);
-  margin:6px auto 0;
-  text-align:center;
+  align-items:center;
+
+  padding:
+    4px 5px 0;
+
   color:var(--muted);
+
   font-size:10px;
 }
 
-/* =========================
-   OVERLAY
-========================= */
+.file-info{
+  flex:1;
 
-.overlay{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.4);
-  z-index:90;
+  overflow:hidden;
+
+  white-space:nowrap;
+
+  text-overflow:ellipsis;
 }
 
-.overlay.show{
-  display:block;
+.disclaimer{
+  text-align:center;
+
+  font-size:10px;
+
+  color:var(--muted);
+
+  margin-top:7px;
 }
 
-/* =========================
+/* =========================================================
+   MODE / TOOLS
+========================================================= */
+
+.mode-bar{
+  display:flex;
+
+  align-items:center;
+
+  gap:5px;
+
+  padding:
+    0 5px 7px;
+
+  overflow-x:auto;
+}
+
+.mode{
+  border:
+    1px solid var(--border);
+
+  background:var(--surface);
+
+  color:var(--muted);
+
+  border-radius:8px;
+
+  padding:5px 9px;
+
+  font-size:11px;
+
+  cursor:pointer;
+
+  white-space:nowrap;
+}
+
+.mode:hover,
+.mode.active{
+  background:var(--surface-soft);
+  color:var(--text);
+}
+
+/* =========================================================
    MODAL
-========================= */
+========================================================= */
 
 .modal{
-  display:none;
   position:fixed;
+
   inset:0;
-  background:rgba(0,0,0,.45);
-  z-index:300;
+
+  z-index:500;
+
+  display:none;
+
   align-items:center;
   justify-content:center;
+
   padding:20px;
+
+  background:rgba(0,0,0,.45);
+
+  backdrop-filter:blur(5px);
 }
 
-.modal.show{
+.modal.open{
   display:flex;
 }
 
 .modal-box{
-  width:min(480px,100%);
+  width:
+    min(470px,100%);
+
   background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:16px;
+
+  border:
+    1px solid var(--border);
+
+  border-radius:17px;
+
+  box-shadow:
+    0 20px 60px rgba(0,0,0,.2);
+
   padding:20px;
-  box-shadow:var(--shadow);
 }
 
 .modal-header{
   display:flex;
+
   align-items:center;
   justify-content:space-between;
+
+  margin-bottom:8px;
 }
 
 .modal-header h2{
-  margin:0;
   font-size:18px;
+
+  margin:0;
 }
 
-.close{
+.modal-close{
+  width:34px;
+  height:34px;
+
   border:0;
+
   background:transparent;
+
   color:var(--muted);
-  font-size:22px;
+
+  border-radius:8px;
+
   cursor:pointer;
+
+  font-size:20px;
+}
+
+.modal-close:hover{
+  background:var(--surface-hover);
 }
 
 .setting{
-  padding:15px 0;
-  border-bottom:1px solid var(--border);
+  padding:
+    14px 0;
+
+  border-bottom:
+    1px solid var(--border);
 }
 
 .setting:last-child{
@@ -743,39 +1169,96 @@ body{
 
 .setting label{
   display:block;
+
   font-size:13px;
   font-weight:600;
-  margin-bottom:8px;
+
+  margin-bottom:7px;
 }
 
 .setting select{
   width:100%;
-  padding:9px;
-  border:1px solid var(--border);
+
+  border:
+    1px solid var(--border);
+
   border-radius:9px;
+
   background:var(--surface);
+
   color:var(--text);
+
+  padding:9px;
+
+  outline:none;
 }
 
-/* =========================
+/* =========================================================
+   TOAST
+========================================================= */
+
+.toast{
+  position:fixed;
+
+  left:50%;
+
+  bottom:25px;
+
+  transform:
+    translate(-50%,20px);
+
+  opacity:0;
+
+  pointer-events:none;
+
+  z-index:1000;
+
+  background:#222;
+
+  color:white;
+
+  padding:10px 14px;
+
+  border-radius:9px;
+
+  font-size:12px;
+
+  transition:.25s;
+}
+
+.toast.show{
+  transform:
+    translate(-50%,0);
+
+  opacity:1;
+}
+
+/* =========================================================
    MOBILE
-========================= */
+========================================================= */
 
 @media(max-width:800px){
 
   .sidebar{
     position:fixed;
+
+    z-index:400;
+
     left:0;
     top:0;
     bottom:0;
+
     transform:translateX(-100%);
+
+    box-shadow:
+      10px 0 30px rgba(0,0,0,.18);
   }
 
   .sidebar.open{
     transform:translateX(0);
   }
 
-  .menu{
+  .mobile-menu{
     display:block;
   }
 
@@ -783,40 +1266,47 @@ body{
     padding:0 10px;
   }
 
-  .status{
-    display:none;
-  }
-
-  .top-actions{
+  .top-status{
     display:none;
   }
 
   .chat{
-    padding:22px 12px 12px;
+    padding:
+      20px 13px 30px;
   }
 
-  .composer-area{
-    padding:6px 8px 10px;
+  .message{
+    margin-bottom:24px;
+  }
+
+  .user .message-content{
+    max-width:88%;
+  }
+
+  .bubble{
+    font-size:14px;
   }
 
   .welcome{
-    margin-top:12vh;
+    margin-top:2vh;
+    min-height:65vh;
   }
 
   .welcome h1{
-    font-size:25px;
+    font-size:27px;
   }
 
   .suggestions{
     grid-template-columns:1fr;
   }
 
-  .user .message-content{
-    max-width:90%;
+  .composer-area{
+    padding:
+      6px 8px 12px;
   }
 
-  .bubble{
-    font-size:14px;
+  .mode-bar{
+    padding-bottom:5px;
   }
 }
 </style>
@@ -826,13 +1316,17 @@ body{
 
 <div class="app">
 
-  <!-- SIDEBAR -->
+  <!-- =====================================================
+       SIDEBAR
+  ====================================================== -->
 
   <aside class="sidebar" id="sidebar">
 
     <div class="brand">
 
-      <div class="brand-symbol">W</div>
+      <div class="brand-symbol">
+        W
+      </div>
 
       <div class="brand-name">
         Wiener IA
@@ -840,8 +1334,12 @@ body{
 
     </div>
 
-    <button class="new-chat" onclick="newChat()">
+    <button
+      class="new-chat"
+      onclick="newChat()">
+
       ＋ Nouvelle conversation
+
     </button>
 
     <div class="history">
@@ -856,81 +1354,174 @@ body{
 
     <div class="sidebar-bottom">
 
-      <button class="side-button" onclick="openSettings()">
-        ⚙ Paramètres
+      <button
+        class="sidebar-button"
+        onclick="openSettings()">
+
+        ⚙️
+        <span>Paramètres</span>
+
       </button>
 
-      <button class="side-button" onclick="toggleTheme()">
-        ◐ Apparence
+      <button
+        class="sidebar-button"
+        onclick="toggleTheme()">
+
+        ◐
+        <span>Changer le thème</span>
+
       </button>
 
-      <button class="side-button" onclick="exportConversation()">
-        ⇩ Exporter
+      <button
+        class="sidebar-button"
+        onclick="exportConversation()">
+
+        ⇩
+        <span>Exporter</span>
+
       </button>
 
-      <button class="side-button" onclick="clearAllHistory()">
-        Effacer l'historique
+      <button
+        class="sidebar-button"
+        onclick="clearAllHistory()">
+
+        🗑
+        <span>Effacer l'historique</span>
+
       </button>
 
     </div>
 
   </aside>
 
-  <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
-  <!-- MAIN -->
+  <!-- =====================================================
+       MAIN
+  ====================================================== -->
 
   <main class="main">
 
     <header class="topbar">
 
-      <button class="menu" onclick="toggleSidebar()">
+      <button
+        class="mobile-menu"
+        onclick="toggleSidebar()">
+
         ☰
+
       </button>
 
       <div class="top-title">
         Wiener IA
       </div>
 
-      <div class="status">
+      <div class="top-status">
+
         <span class="status-dot"></span>
-        En ligne
+
+        <span id="statusText">
+          Prêt
+        </span>
+
       </div>
 
       <div class="top-actions">
 
-        <button class="top-button" onclick="newChat()">
-          Nouvelle discussion
+        <button
+          class="top-button"
+          title="Nouvelle conversation"
+          onclick="newChat()">
+
+          ＋
+
+        </button>
+
+        <button
+          class="top-button"
+          title="Paramètres"
+          onclick="openSettings()">
+
+          ⚙
+
         </button>
 
       </div>
 
     </header>
 
-    <section class="chat" id="chat">
 
-      <div class="chat-inner" id="chatInner"></div>
+    <!-- ===================================================
+         CHAT
+    ==================================================== -->
 
-    </section>
+    <div
+      class="chat"
+      id="chat">
+    </div>
 
-    <!-- COMPOSER -->
+
+    <!-- ===================================================
+         COMPOSER
+    ==================================================== -->
 
     <div class="composer-area">
 
       <div class="composer">
 
         <div
-          class="attachments"
-          id="attachments">
+          class="mode-bar"
+          id="modeBar">
+
+          <button
+            class="mode active"
+            onclick="setMode('chat',this)">
+
+            💬 Chat
+
+          </button>
+
+          <button
+            class="mode"
+            onclick="setMode('search',this)">
+
+            🔎 Recherche
+
+          </button>
+
+          <button
+            class="mode"
+            onclick="setMode('exercise',this)">
+
+            📚 Exercice
+
+          </button>
+
+          <button
+            class="mode"
+            onclick="setMode('image',this)">
+
+            ✦ Image
+
+          </button>
+
         </div>
+
+
+        <div
+          id="attachments"
+          class="attachments">
+        </div>
+
 
         <div class="composer-row">
 
           <button
             class="tool"
-            title="Joindre un fichier"
+            title="Ajouter un fichier"
             onclick="chooseFile()">
+
             ＋
+
           </button>
 
           <input
@@ -938,44 +1529,64 @@ body{
             type="file"
             hidden
             multiple
-            accept=".txt,.pdf,.doc,.docx,.csv,.json,.jpg,.jpeg,.png,.webp"
+            accept=".pdf,.txt,.csv,.json,.jpg,.jpeg,.png,.webp"
             onchange="handleFiles(event)"
           >
+
 
           <button
             class="tool"
             title="Dictée vocale"
             onclick="startVoice()">
-            ◉
+
+            🎤
+
           </button>
+
 
           <textarea
             id="message"
             class="textarea"
             rows="1"
-            placeholder="Demandez quelque chose à Wiener IA..."
+            placeholder="Message à Wiener IA..."
             onkeydown="handleKey(event)"
             oninput="resizeTextarea(this)"
           ></textarea>
 
+
           <button
             class="send"
             id="sendButton"
-            onclick="sendMessage()">
+            onclick="sendMessage()"
+            title="Envoyer">
+
             ↑
+
           </button>
 
         </div>
 
-        <div
-          id="fileInfo"
-          class="file-info">
+
+        <div class="composer-info">
+
+          <div
+            class="file-info"
+            id="fileInfo">
+          </div>
+
+          <span>
+            Entrée pour envoyer · Maj + Entrée pour une nouvelle ligne
+          </span>
+
         </div>
 
       </div>
 
+
       <div class="disclaimer">
+
         Wiener IA peut faire des erreurs. Vérifiez les informations importantes.
+
       </div>
 
     </div>
@@ -985,37 +1596,57 @@ body{
 </div>
 
 
-<!-- SETTINGS -->
+<!-- =======================================================
+     SETTINGS
+======================================================== -->
 
-<div class="modal" id="settingsModal">
+<div
+  class="modal"
+  id="settingsModal">
 
   <div class="modal-box">
 
     <div class="modal-header">
 
-      <h2>Paramètres</h2>
+      <h2>
+        Paramètres
+      </h2>
 
       <button
-        class="close"
+        class="modal-close"
         onclick="closeSettings()">
+
         ×
+
       </button>
 
     </div>
 
+
     <div class="setting">
 
       <label>
-        Langue
+        Langue de Wiener IA
       </label>
 
       <select id="languageSelect">
-        <option value="fr-FR">Français</option>
-        <option value="en-US">English</option>
-        <option value="es-ES">Español</option>
+
+        <option value="fr-FR">
+          Français
+        </option>
+
+        <option value="en-US">
+          English
+        </option>
+
+        <option value="es-ES">
+          Español
+        </option>
+
       </select>
 
     </div>
+
 
     <div class="setting">
 
@@ -1024,8 +1655,38 @@ body{
       </label>
 
       <select id="autoSpeak">
-        <option value="no">Désactivée</option>
-        <option value="yes">Activée</option>
+
+        <option value="no">
+          Désactivée
+        </option>
+
+        <option value="yes">
+          Activée
+        </option>
+
+      </select>
+
+    </div>
+
+
+    <div class="setting">
+
+      <label>
+        Thème
+      </label>
+
+      <select
+        id="themeSelect"
+        onchange="setTheme(this.value)">
+
+        <option value="light">
+          Clair
+        </option>
+
+        <option value="dark">
+          Sombre
+        </option>
+
       </select>
 
     </div>
@@ -1035,26 +1696,36 @@ body{
 </div>
 
 
+<div
+  class="toast"
+  id="toast">
+</div>
+
+
 <script>
 
 /* =========================================================
-   DONNÉES
+   VARIABLES
 ========================================================= */
 
 let conversations =
   JSON.parse(
-    localStorage.getItem("wiener_conversations") || "[]"
+    localStorage.getItem(
+      "wiener_conversations"
+    ) || "[]"
   );
 
 let currentConversation = null;
 
 let selectedFiles = [];
 
+let currentMode = "chat";
+
+let busy = false;
+
+
 const chat =
   document.getElementById("chat");
-
-const chatInner =
-  document.getElementById("chatInner");
 
 const input =
   document.getElementById("message");
@@ -1065,14 +1736,14 @@ const sendButton =
 const sidebar =
   document.getElementById("sidebar");
 
-const overlay =
-  document.getElementById("overlay");
-
 const fileInput =
   document.getElementById("fileInput");
 
 const attachments =
   document.getElementById("attachments");
+
+const statusText =
+  document.getElementById("statusText");
 
 
 /* =========================================================
@@ -1082,21 +1753,29 @@ const attachments =
 function init(){
 
   const theme =
-    localStorage.getItem("wiener_theme");
+    localStorage.getItem(
+      "wiener_theme"
+    ) || "light";
 
-  if(theme === "dark"){
-    document.body.classList.add("dark");
-  }
+  setTheme(theme);
 
-  document.getElementById("languageSelect").value =
-    localStorage.getItem("wiener_language") ||
-    "fr-FR";
+  document.getElementById(
+    "languageSelect"
+  ).value =
+    localStorage.getItem(
+      "wiener_language"
+    ) || "fr-FR";
 
-  document.getElementById("autoSpeak").value =
-    localStorage.getItem("wiener_auto_speak") ||
-    "no";
+  document.getElementById(
+    "autoSpeak"
+  ).value =
+    localStorage.getItem(
+      "wiener_auto_speak"
+    ) || "no";
+
 
   renderHistory();
+
 
   if(conversations.length){
 
@@ -1107,11 +1786,9 @@ function init(){
 
   }else{
 
-    createFreshConversation(false);
+    createConversation();
 
   }
-
-  input.focus();
 
 }
 
@@ -1120,46 +1797,40 @@ function init(){
    NOUVELLE CONVERSATION
 ========================================================= */
 
-function createFreshConversation(save = true){
+function createConversation(){
 
   currentConversation = {
 
-    id:Date.now(),
+    id:
+      Date.now(),
 
-    title:"Nouvelle conversation",
+    title:
+      "Nouvelle conversation",
 
     messages:[]
 
   };
 
-  if(save){
+  conversations.unshift(
+    currentConversation
+  );
 
-    conversations.unshift(
-      currentConversation
-    );
+  saveConversations();
 
-    saveConversations();
+}
 
-  }
 
-  renderHistory();
+function newChat(){
 
-  renderConversation();
+  createConversation();
 
   selectedFiles = [];
 
   renderAttachments();
 
-}
+  renderHistory();
 
-
-/* =========================================================
-   NEW CHAT
-========================================================= */
-
-function newChat(){
-
-  createFreshConversation(true);
+  renderConversation();
 
   input.focus();
 
@@ -1175,15 +1846,20 @@ function newChat(){
 function renderHistory(){
 
   const list =
-    document.getElementById("historyList");
+    document.getElementById(
+      "historyList"
+    );
 
   list.innerHTML = "";
+
 
   conversations.forEach(
     conversation => {
 
       const item =
-        document.createElement("div");
+        document.createElement(
+          "div"
+        );
 
       item.className =
         "history-item" +
@@ -1194,14 +1870,20 @@ function renderHistory(){
             : ""
         );
 
+
       item.textContent =
         conversation.title ||
         "Conversation";
+
 
       item.onclick = () => {
 
         currentConversation =
           conversation;
+
+        selectedFiles = [];
+
+        renderAttachments();
 
         renderHistory();
 
@@ -1210,6 +1892,7 @@ function renderHistory(){
         closeSidebar();
 
       };
+
 
       list.appendChild(item);
 
@@ -1225,7 +1908,8 @@ function renderHistory(){
 
 function renderConversation(){
 
-  chatInner.innerHTML = "";
+  chat.innerHTML = "";
+
 
   if(
     !currentConversation ||
@@ -1239,17 +1923,21 @@ function renderConversation(){
 
   }
 
+
   currentConversation.messages.forEach(
     (message,index) => {
 
       addMessageToScreen(
         message.role,
         message.content,
-        index
+        index,
+        message.sources,
+        message.image
       );
 
     }
   );
+
 
   scrollBottom();
 
@@ -1262,7 +1950,7 @@ function renderConversation(){
 
 function renderWelcome(){
 
-  chatInner.innerHTML = `
+  chat.innerHTML = `
 
     <div class="welcome">
 
@@ -1275,33 +1963,69 @@ function renderWelcome(){
       </h1>
 
       <p>
-        Que souhaitez-vous faire aujourd'hui ?
+        Que voulez-vous faire avec Wiener IA ?
       </p>
+
 
       <div class="suggestions">
 
         <button
           class="suggestion"
-          onclick="useSuggestion('Explique-moi ce sujet simplement, avec des exemples')">
-          📚 Explique-moi un sujet
+          onclick="useSuggestion('Explique-moi un sujet de cours simplement')">
+
+          <div class="suggestion-title">
+            📚 Apprendre
+          </div>
+
+          <div class="suggestion-description">
+            Comprendre un cours étape par étape.
+          </div>
+
         </button>
+
 
         <button
           class="suggestion"
           onclick="useSuggestion('Résous cet exercice étape par étape et explique chaque calcul')">
-          🧮 Résoudre un exercice
+
+          <div class="suggestion-title">
+            🧮 Résoudre
+          </div>
+
+          <div class="suggestion-description">
+            Maths, physique, chimie, SVT...
+          </div>
+
         </button>
+
 
         <button
           class="suggestion"
-          onclick="useSuggestion('Aide-moi à programmer mon projet étape par étape')">
-          💻 Programmer
+          onclick="useSuggestion('Fais une recherche récente et donne-moi les sources')">
+
+          <div class="suggestion-title">
+            🔎 Rechercher
+          </div>
+
+          <div class="suggestion-description">
+            Obtenir des informations récentes.
+          </div>
+
         </button>
+
 
         <button
           class="suggestion"
-          onclick="useSuggestion('Donne-moi des idées originales pour mon projet')">
-          💡 Trouver des idées
+          onclick="useSuggestion('Aide-moi à créer un projet informatique')">
+
+          <div class="suggestion-title">
+            💻 Programmer
+          </div>
+
+          <div class="suggestion-description">
+            Développer et corriger ton projet.
+          </div>
+
         </button>
 
       </div>
@@ -1314,13 +2038,15 @@ function renderWelcome(){
 
 
 /* =========================================================
-   MESSAGE
+   AJOUT MESSAGE
 ========================================================= */
 
 function addMessageToScreen(
   role,
   content,
-  index
+  index,
+  sources = [],
+  image = null
 ){
 
   const wrapper =
@@ -1329,17 +2055,20 @@ function addMessageToScreen(
   wrapper.className =
     "message " + role;
 
+
   const container =
     document.createElement("div");
 
   container.className =
     "message-content";
 
+
   const bubble =
     document.createElement("div");
 
   bubble.className =
     "bubble";
+
 
   if(role === "assistant"){
 
@@ -1353,7 +2082,96 @@ function addMessageToScreen(
 
   }
 
-  container.appendChild(bubble);
+
+  container.appendChild(
+    bubble
+  );
+
+
+  if(image){
+
+    const img =
+      document.createElement("img");
+
+    img.className =
+      "generated-image";
+
+    img.src =
+      image;
+
+    img.alt =
+      "Image générée par Wiener IA";
+
+    container.appendChild(img);
+
+  }
+
+
+  if(
+    role === "assistant" &&
+    sources &&
+    sources.length
+  ){
+
+    const sourceContainer =
+      document.createElement("div");
+
+    sourceContainer.className =
+      "sources";
+
+
+    const title =
+      document.createElement("div");
+
+    title.className =
+      "source-title";
+
+    title.textContent =
+      "Sources";
+
+    sourceContainer.appendChild(title);
+
+
+    sources.forEach(
+      source => {
+
+        if(!source.url) return;
+
+
+        const link =
+          document.createElement("a");
+
+        link.className =
+          "source-link";
+
+        link.href =
+          source.url;
+
+        link.target =
+          "_blank";
+
+        link.rel =
+          "noopener noreferrer";
+
+        link.textContent =
+          source.title ||
+          source.url;
+
+
+        sourceContainer.appendChild(
+          link
+        );
+
+      }
+    );
+
+
+    container.appendChild(
+      sourceContainer
+    );
+
+  }
+
 
   if(role === "assistant"){
 
@@ -1363,89 +2181,112 @@ function addMessageToScreen(
     actions.className =
       "actions";
 
-    actions.innerHTML = `
 
-      <button
-        class="action"
-        title="Copier"
-        onclick="copyText(${index})">
-        ⧉
-      </button>
+    const copy =
+      document.createElement("button");
 
-      <button
-        class="action"
-        title="Lire"
-        onclick="speakText(${index})">
-        🔊
-      </button>
+    copy.className =
+      "action";
 
-      <button
-        class="action"
-        title="Régénérer"
-        onclick="regenerate(${index})">
-        ↻
-      </button>
+    copy.title =
+      "Copier";
 
-      <button
-        class="action"
-        title="Bonne réponse"
-        onclick="feedback('positive')">
-        👍
-      </button>
+    copy.textContent =
+      "📋";
 
-      <button
-        class="action"
-        title="Mauvaise réponse"
-        onclick="feedback('negative')">
-        👎
-      </button>
+    copy.onclick =
+      () => copyText(index);
 
-    `;
 
-    container.appendChild(actions);
+    const speak =
+      document.createElement("button");
+
+    speak.className =
+      "action";
+
+    speak.title =
+      "Lire";
+
+    speak.textContent =
+      "🔊";
+
+    speak.onclick =
+      () => speakText(index);
+
+
+    const regenerateButton =
+      document.createElement("button");
+
+    regenerateButton.className =
+      "action";
+
+    regenerateButton.title =
+      "Régénérer";
+
+    regenerateButton.textContent =
+      "↻";
+
+    regenerateButton.onclick =
+      () => regenerate(index);
+
+
+    actions.appendChild(copy);
+    actions.appendChild(speak);
+    actions.appendChild(
+      regenerateButton
+    );
+
+
+    container.appendChild(
+      actions
+    );
 
   }
 
-  wrapper.appendChild(container);
 
-  chatInner.appendChild(wrapper);
+  wrapper.appendChild(
+    container
+  );
+
+
+  chat.appendChild(
+    wrapper
+  );
 
 }
 
 
 /* =========================================================
-   MARKDOWN SIMPLE
+   MARKDOWN SIMPLE ET SÉCURISÉ
 ========================================================= */
 
 function renderMarkdown(text){
 
   if(!text) return "";
 
+
   let safe =
     escapeHTML(text);
 
-  const blocks = [];
+
+  const codeBlocks = [];
+
 
   safe =
     safe.replace(
       /```([\s\S]*?)```/g,
-      (_,code) => {
+      function(match,code){
 
         const id =
-          "code_" +
-          Math.random()
-            .toString(36)
-            .slice(2);
+          codeBlocks.length;
 
-        blocks.push({
-          id,
-          code
-        });
+        codeBlocks.push(code);
 
-        return `@@${id}@@`;
+        return `@@CODE_${id}@@`;
 
       }
     );
+
 
   safe =
     safe.replace(
@@ -1453,11 +2294,13 @@ function renderMarkdown(text){
       "<h3>$1</h3>"
     );
 
+
   safe =
     safe.replace(
       /^## (.*)$/gm,
       "<h2>$1</h2>"
     );
+
 
   safe =
     safe.replace(
@@ -1465,11 +2308,13 @@ function renderMarkdown(text){
       "<h1>$1</h1>"
     );
 
+
   safe =
     safe.replace(
       /\*\*(.*?)\*\*/g,
       "<strong>$1</strong>"
     );
+
 
   safe =
     safe.replace(
@@ -1477,17 +2322,20 @@ function renderMarkdown(text){
       "<em>$1</em>"
     );
 
+
   safe =
     safe.replace(
       /`([^`]+)`/g,
       "<code>$1</code>"
     );
 
+
   safe =
     safe.replace(
-      /^\- (.*)$/gm,
+      /^[-•] (.*)$/gm,
       "<li>$1</li>"
     );
+
 
   safe =
     safe.replace(
@@ -1495,83 +2343,155 @@ function renderMarkdown(text){
       "<ul>$1</ul>"
     );
 
+
   safe =
     safe.replace(
-      /\n\n/g,
+      /\n{2,}/g,
       "</p><p>"
     );
+
 
   safe =
     "<p>" +
     safe +
     "</p>";
 
-  blocks.forEach(
-    block => {
+
+  safe =
+    safe.replace(
+      /<p>\s*(<h[123]>)/g,
+      "$1"
+    );
+
+
+  safe =
+    safe.replace(
+      /(<\/h[123]>)\s*<\/p>/g,
+      "$1"
+    );
+
+
+  safe =
+    safe.replace(
+      /<p>\s*(<ul>)/g,
+      "$1"
+    );
+
+
+  safe =
+    safe.replace(
+      /(<\/ul>)\s*<\/p>/g,
+      "$1"
+    );
+
+
+  codeBlocks.forEach(
+    (code,index) => {
+
+      const escapedCode =
+        code.trim();
+
 
       const html = `
 
         <div class="code-block">
 
-          <button
-            class="copy-code"
-            onclick="copyCode('${block.id}')">
-            Copier
-          </button>
+          <div class="code-header">
 
-          <pre>
-            <code id="${block.id}">${block.code}</code>
-          </pre>
+            <span>Code</span>
+
+            <button
+              class="code-copy"
+              onclick="copyCode(${index},this)">
+
+              Copier
+
+            </button>
+
+          </div>
+
+          <pre>${escapedCode}</pre>
 
         </div>
 
       `;
 
+
       safe =
         safe.replace(
-          `@@${block.id}@@`,
+          `@@CODE_${index}@@`,
           html
         );
 
     }
   );
 
+
   return safe;
 
 }
 
 
-function copyCode(id){
+let lastCodeBlocks = [];
 
-  const element =
-    document.getElementById(id);
 
-  if(!element) return;
+function copyCode(index,button){
 
-  navigator.clipboard.writeText(
-    element.textContent
-  );
+  const block =
+    button.closest(
+      ".code-block"
+    );
+
+  if(!block) return;
+
+
+  const code =
+    block.querySelector(
+      "pre"
+    )?.textContent || "";
+
+
+  navigator.clipboard
+    .writeText(code)
+    .then(
+      () => showToast("Code copié")
+    )
+    .catch(
+      () => showToast("Copie impossible")
+    );
 
 }
 
 
 /* =========================================================
-   ENVOI
+   ENVOI PRINCIPAL
 ========================================================= */
 
 async function sendMessage(){
 
+  if(busy) return;
+
+
   const text =
     input.value.trim();
 
-  if(!text || sendButton.disabled)
+
+  if(
+    !text &&
+    selectedFiles.length === 0
+  ){
+
     return;
+
+  }
+
 
   if(!currentConversation){
 
-    createFreshConversation(true);
+    createConversation();
 
   }
+
 
   if(
     currentConversation.title ===
@@ -1579,21 +2499,43 @@ async function sendMessage(){
   ){
 
     currentConversation.title =
-      text.substring(0,50);
+      text
+        ? text.substring(0,45)
+        : "Nouvelle conversation";
 
   }
 
-  currentConversation.messages.push({
 
-    role:"user",
+  busy = true;
 
-    content:text
+  sendButton.disabled = true;
 
-  });
+  statusText.textContent =
+    "Réflexion...";
+
+
+  const filesToSend =
+    [...selectedFiles];
+
+
+  if(text){
+
+    currentConversation.messages.push({
+
+      role:"user",
+
+      content:text
+
+    });
+
+  }
+
 
   input.value = "";
 
   resizeTextarea(input);
+
+  renderAttachments();
 
   saveConversations();
 
@@ -1601,45 +2543,63 @@ async function sendMessage(){
 
   showTyping();
 
-  sendButton.disabled = true;
 
   try{
 
-    const response =
-      await fetch(
-        "/api/chat",
-        {
+    let result;
 
-          method:"POST",
 
-          headers:{
-            "Content-Type":
-              "application/json"
-          },
+    if(
+      currentMode === "search"
+    ){
 
-          body:JSON.stringify({
-
-            messages:
-              currentConversation.messages
-
-          })
-
-        }
-      );
-
-    const data =
-      await response.json();
-
-    if(!response.ok){
-
-      throw new Error(
-        data.error ||
-        "Erreur du serveur."
-      );
+      result =
+        await requestSearch(text);
 
     }
 
-    if(!data.answer){
+    else if(
+      currentMode === "exercise"
+    ){
+
+      result =
+        await requestExercise(text);
+
+    }
+
+    else if(
+      currentMode === "image"
+    ){
+
+      result =
+        await requestImage(text);
+
+    }
+
+    else if(
+      filesToSend.length
+    ){
+
+      result =
+        await requestFiles(
+          filesToSend,
+          text
+        );
+
+    }
+
+    else{
+
+      result =
+        await requestChat();
+
+    }
+
+
+    hideTyping();
+
+
+    if(!result || !result.answer){
 
       throw new Error(
         "Wiener IA n'a retourné aucune réponse."
@@ -1647,19 +2607,27 @@ async function sendMessage(){
 
     }
 
-    hideTyping();
 
     currentConversation.messages.push({
 
       role:"assistant",
 
-      content:data.answer
+      content:
+        result.answer,
+
+      sources:
+        result.sources || [],
+
+      image:
+        result.image || null
 
     });
+
 
     saveConversations();
 
     renderConversation();
+
 
     if(
       localStorage.getItem(
@@ -1668,14 +2636,446 @@ async function sendMessage(){
     ){
 
       speakContent(
-        data.answer
+        result.answer
       );
 
     }
 
+
   }catch(error){
 
     hideTyping();
+
+
+    currentConversation.messages.push({
+
+      role:"assistant",
+
+      content:
+        "❌ " +
+        (
+          error.message ||
+          "Une erreur est survenue."
+        )
+
+    });
+
+
+    saveConversations();
+
+    renderConversation();
+
+  }
+
+
+  selectedFiles = [];
+
+  renderAttachments();
+
+
+  busy = false;
+
+  sendButton.disabled = false;
+
+  statusText.textContent =
+    "Prêt";
+
+  input.focus();
+
+}
+
+
+/* =========================================================
+   CHAT API
+========================================================= */
+
+async function requestChat(){
+
+  const response =
+    await fetch(
+      "/api/chat",
+      {
+
+        method:"POST",
+
+        headers:{
+          "Content-Type":
+            "application/json"
+        },
+
+        body:JSON.stringify({
+
+          messages:
+            currentConversation.messages
+
+        })
+
+      }
+    );
+
+
+  return readResponse(
+    response
+  );
+
+}
+
+
+/* =========================================================
+   RECHERCHE
+========================================================= */
+
+async function requestSearch(
+  query
+){
+
+  if(!query){
+
+    throw new Error(
+      "Écris une question à rechercher."
+    );
+
+  }
+
+
+  const response =
+    await fetch(
+      "/api/search",
+      {
+
+        method:"POST",
+
+        headers:{
+          "Content-Type":
+            "application/json"
+        },
+
+        body:JSON.stringify({
+
+          query
+
+        })
+
+      }
+    );
+
+
+  return readResponse(
+    response
+  );
+
+}
+
+
+/* =========================================================
+   EXERCICE
+========================================================= */
+
+async function requestExercise(
+  question
+){
+
+  if(!question){
+
+    throw new Error(
+      "Écris l'exercice à résoudre."
+    );
+
+  }
+
+
+  const response =
+    await fetch(
+      "/api/exercises",
+      {
+
+        method:"POST",
+
+        headers:{
+          "Content-Type":
+            "application/json"
+        },
+
+        body:JSON.stringify({
+
+          question,
+
+          level:
+            "Terminale",
+
+          subject:
+            "non précisée"
+
+        })
+
+      }
+    );
+
+
+  return readResponse(
+    response
+  );
+
+}
+
+
+/* =========================================================
+   IMAGE
+========================================================= */
+
+async function requestImage(
+  prompt
+){
+
+  if(!prompt){
+
+    throw new Error(
+      "Décris l'image que tu veux créer."
+    );
+
+  }
+
+
+  const response =
+    await fetch(
+      "/api/image",
+      {
+
+        method:"POST",
+
+        headers:{
+          "Content-Type":
+            "application/json"
+        },
+
+        body:JSON.stringify({
+
+          prompt
+
+        })
+
+      }
+    );
+
+
+  return readResponse(
+    response
+  );
+
+}
+
+
+/* =========================================================
+   FICHIERS
+========================================================= */
+
+async function requestFiles(
+  files,
+  prompt
+){
+
+  const file =
+    files[0];
+
+
+  if(
+    files.length > 1
+  ){
+
+    throw new Error(
+      "Pour l'analyse, sélectionne un seul fichier à la fois."
+    );
+
+  }
+
+
+  if(
+    file.size >
+    30 * 1024 * 1024
+  ){
+
+    throw new Error(
+      "Le fichier dépasse la limite de 30 MB."
+    );
+
+  }
+
+
+  const base64 =
+    await fileToBase64(
+      file
+    );
+
+
+  const response =
+    await fetch(
+      "/api/analyze-file",
+      {
+
+        method:"POST",
+
+        headers:{
+          "Content-Type":
+            "application/json"
+        },
+
+        body:JSON.stringify({
+
+          file:base64,
+
+          mimeType:
+            file.type ||
+            guessMimeType(
+              file.name
+            ),
+
+          prompt:
+            prompt ||
+            "Analyse ce fichier et explique clairement les informations importantes."
+
+        })
+
+      }
+    );
+
+
+  return readResponse(
+    response
+  );
+
+}
+
+
+/* =========================================================
+   RÉPONSE HTTP
+========================================================= */
+
+async function readResponse(
+  response
+){
+
+  let data;
+
+
+  try{
+
+    data =
+      await response.json();
+
+  }catch{
+
+    throw new Error(
+      "Le serveur a renvoyé une réponse invalide."
+    );
+
+  }
+
+
+  if(!response.ok){
+
+    throw new Error(
+      data.error ||
+      `Erreur serveur (${response.status}).`
+    );
+
+  }
+
+
+  return data;
+
+}
+
+
+/* =========================================================
+   REGENERATION
+========================================================= */
+
+async function regenerate(
+  index
+){
+
+  if(busy) return;
+
+
+  if(
+    !currentConversation ||
+    !currentConversation.messages[index]
+  ){
+
+    return;
+
+  }
+
+
+  if(
+    currentConversation.messages[index].role !==
+    "assistant"
+  ){
+
+    return;
+
+  }
+
+
+  currentConversation.messages =
+    currentConversation.messages.slice(
+      0,
+      index
+    );
+
+
+  saveConversations();
+
+  renderConversation();
+
+  showTyping();
+
+
+  busy = true;
+
+  sendButton.disabled = true;
+
+  statusText.textContent =
+    "Régénération...";
+
+
+  try{
+
+    const result =
+      await requestChat();
+
+
+    hideTyping();
+
+
+    if(!result.answer){
+
+      throw new Error(
+        "Réponse vide."
+      );
+
+    }
+
+
+    currentConversation.messages.push({
+
+      role:"assistant",
+
+      content:
+        result.answer
+
+    });
+
+
+    saveConversations();
+
+    renderConversation();
+
+
+  }catch(error){
+
+    hideTyping();
+
 
     currentConversation.messages.push({
 
@@ -1687,17 +3087,20 @@ async function sendMessage(){
 
     });
 
+
     saveConversations();
 
     renderConversation();
 
-  }finally{
-
-    sendButton.disabled = false;
-
-    input.focus();
-
   }
+
+
+  busy = false;
+
+  sendButton.disabled = false;
+
+  statusText.textContent =
+    "Prêt";
 
 }
 
@@ -1710,8 +3113,11 @@ function showTyping(){
 
   hideTyping();
 
+
   const wrapper =
-    document.createElement("div");
+    document.createElement(
+      "div"
+    );
 
   wrapper.id =
     "typing";
@@ -1719,19 +3125,30 @@ function showTyping(){
   wrapper.className =
     "message assistant";
 
+
   wrapper.innerHTML = `
 
-    <div class="typing">
+    <div class="message-content">
 
-      <span class="dot"></span>
-      <span class="dot"></span>
-      <span class="dot"></span>
+      <div class="typing">
+
+        <span class="dot"></span>
+
+        <span class="dot"></span>
+
+        <span class="dot"></span>
+
+      </div>
 
     </div>
 
   `;
 
-  chatInner.appendChild(wrapper);
+
+  chat.appendChild(
+    wrapper
+  );
+
 
   scrollBottom();
 
@@ -1741,25 +3158,33 @@ function showTyping(){
 function hideTyping(){
 
   const typing =
-    document.getElementById("typing");
+    document.getElementById(
+      "typing"
+    );
 
-  if(typing)
+  if(typing){
+
     typing.remove();
+
+  }
 
 }
 
 
 /* =========================================================
-   COPIER
+   COPIE
 ========================================================= */
 
-async function copyText(index){
+async function copyText(
+  index
+){
 
   const message =
-    currentConversation.messages[index];
+    currentConversation?.messages[index];
 
-  if(!message)
-    return;
+
+  if(!message) return;
+
 
   try{
 
@@ -1767,10 +3192,14 @@ async function copyText(index){
       message.content
     );
 
+    showToast(
+      "Réponse copiée"
+    );
+
   }catch{
 
-    alert(
-      "Impossible de copier le texte."
+    showToast(
+      "Impossible de copier"
     );
 
   }
@@ -1779,110 +3208,164 @@ async function copyText(index){
 
 
 /* =========================================================
-   REGENERER
+   VOIX
 ========================================================= */
 
-async function regenerate(index){
-
-  if(index <= 0)
-    return;
+function speakText(
+  index
+){
 
   const message =
-    currentConversation.messages[index];
+    currentConversation?.messages[index];
+
+
+  if(!message) return;
+
+
+  speakContent(
+    message.content
+  );
+
+}
+
+
+function speakContent(
+  text
+){
 
   if(
-    !message ||
-    message.role !== "assistant"
-  )
-    return;
+    !("speechSynthesis" in window)
+  ){
 
-  currentConversation.messages =
-    currentConversation.messages.slice(
-      0,
-      index
+    showToast(
+      "Lecture vocale indisponible"
     );
 
-  saveConversations();
-
-  renderConversation();
-
-  showTyping();
-
-  sendButton.disabled = true;
-
-  try{
-
-    const response =
-      await fetch(
-        "/api/chat",
-        {
-
-          method:"POST",
-
-          headers:{
-            "Content-Type":
-              "application/json"
-          },
-
-          body:JSON.stringify({
-
-            messages:
-              currentConversation.messages
-
-          })
-
-        }
-      );
-
-    const data =
-      await response.json();
-
-    if(!response.ok){
-
-      throw new Error(
-        data.error ||
-        "Erreur du serveur."
-      );
-
-    }
-
-    currentConversation.messages.push({
-
-      role:"assistant",
-
-      content:data.answer
-
-    });
-
-    saveConversations();
-
-    hideTyping();
-
-    renderConversation();
-
-  }catch(error){
-
-    hideTyping();
-
-    currentConversation.messages.push({
-
-      role:"assistant",
-
-      content:
-        "❌ " +
-        error.message
-
-    });
-
-    saveConversations();
-
-    renderConversation();
-
-  }finally{
-
-    sendButton.disabled = false;
+    return;
 
   }
+
+
+  speechSynthesis.cancel();
+
+
+  const utterance =
+    new SpeechSynthesisUtterance(
+      text
+    );
+
+
+  utterance.lang =
+    document.getElementById(
+      "languageSelect"
+    ).value;
+
+
+  utterance.rate =
+    .95;
+
+
+  speechSynthesis.speak(
+    utterance
+  );
+
+}
+
+
+/* =========================================================
+   DICTÉE
+========================================================= */
+
+function startVoice(){
+
+  const SpeechRecognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
+
+
+  if(!SpeechRecognition){
+
+    showToast(
+      "Dictée vocale indisponible sur ce navigateur."
+    );
+
+    return;
+
+  }
+
+
+  const recognition =
+    new SpeechRecognition();
+
+
+  recognition.lang =
+    document.getElementById(
+      "languageSelect"
+    ).value;
+
+
+  recognition.interimResults =
+    false;
+
+  recognition.continuous =
+    false;
+
+
+  statusText.textContent =
+    "Écoute...";
+
+
+  recognition.onresult =
+    event => {
+
+      const transcript =
+        event.results[0][0]
+          .transcript;
+
+
+      input.value +=
+        (
+          input.value
+            ? " "
+            : ""
+        ) +
+        transcript;
+
+
+      resizeTextarea(
+        input
+      );
+
+
+      statusText.textContent =
+        "Prêt";
+
+    };
+
+
+  recognition.onerror =
+    () => {
+
+      statusText.textContent =
+        "Prêt";
+
+      showToast(
+        "Erreur de dictée"
+      );
+
+    };
+
+
+  recognition.onend =
+    () => {
+
+      statusText.textContent =
+        "Prêt";
+
+    };
+
+
+  recognition.start();
 
 }
 
@@ -1898,19 +3381,27 @@ function chooseFile(){
 }
 
 
-function handleFiles(event){
+function handleFiles(
+  event
+){
 
   const files =
     Array.from(
       event.target.files
     );
 
+
+  if(!files.length) return;
+
+
   selectedFiles =
-    selectedFiles.concat(
-      files
-    );
+    files.slice(0,1);
+
 
   renderAttachments();
+
+
+  fileInput.value = "";
 
 }
 
@@ -1919,156 +3410,235 @@ function renderAttachments(){
 
   attachments.innerHTML = "";
 
+
   selectedFiles.forEach(
     (file,index) => {
 
       const element =
-        document.createElement("div");
+        document.createElement(
+          "div"
+        );
 
       element.className =
         "attachment";
 
+
       element.innerHTML = `
 
         <span>
-          📎 ${escapeHTML(file.name)}
+          📎
+        </span>
+
+        <span class="attachment-name">
+          ${escapeHTML(file.name)}
         </span>
 
         <button
           class="remove-file"
           onclick="removeFile(${index})">
+
           ×
+
         </button>
 
       `;
 
-      attachments.appendChild(element);
+
+      attachments.appendChild(
+        element
+      );
 
     }
   );
 
-  const info =
-    document.getElementById("fileInfo");
 
-  info.textContent =
-    selectedFiles.length
-      ? selectedFiles.length +
-        " fichier(s) sélectionné(s)"
-      : "";
+  const info =
+    document.getElementById(
+      "fileInfo"
+    );
+
+
+  if(selectedFiles.length){
+
+    info.textContent =
+      selectedFiles[0].name;
+
+  }else{
+
+    info.textContent =
+      "";
+
+  }
 
 }
 
 
-function removeFile(index){
+function removeFile(
+  index
+){
 
   selectedFiles.splice(
     index,
     1
   );
 
+
   renderAttachments();
 
 }
 
 
-/* =========================================================
-   VOIX
-========================================================= */
+function fileToBase64(
+  file
+){
 
-function speakText(index){
+  return new Promise(
+    (resolve,reject) => {
 
-  const message =
-    currentConversation.messages[index];
-
-  if(message)
-    speakContent(message.content);
-
-}
+      const reader =
+        new FileReader();
 
 
-function speakContent(text){
+      reader.onload =
+        () => {
 
-  if(
-    !("speechSynthesis" in window)
-  ){
+          resolve(
+            reader.result
+          );
 
-    alert(
-      "La lecture vocale n'est pas disponible."
-    );
+        };
 
-    return;
 
-  }
+      reader.onerror =
+        () => {
 
-  speechSynthesis.cancel();
+          reject(
+            new Error(
+              "Impossible de lire le fichier."
+            )
+          );
 
-  const utterance =
-    new SpeechSynthesisUtterance(
-      text
-    );
+        };
 
-  utterance.lang =
-    document.getElementById(
-      "languageSelect"
-    ).value;
 
-  speechSynthesis.speak(
-    utterance
+      reader.readAsDataURL(
+        file
+      );
+
+    }
   );
 
 }
 
 
-function startVoice(){
+function guessMimeType(
+  filename
+){
 
-  const Recognition =
-    window.SpeechRecognition ||
-    window.webkitSpeechRecognition;
+  const ext =
+    filename
+      .split(".")
+      .pop()
+      .toLowerCase();
 
-  if(!Recognition){
 
-    alert(
-      "La dictée vocale n'est pas disponible sur ce navigateur."
+  const types = {
+
+    pdf:
+      "application/pdf",
+
+    png:
+      "image/png",
+
+    jpg:
+      "image/jpeg",
+
+    jpeg:
+      "image/jpeg",
+
+    webp:
+      "image/webp",
+
+    txt:
+      "text/plain",
+
+    csv:
+      "text/csv",
+
+    json:
+      "application/json"
+
+  };
+
+
+  return (
+    types[ext] ||
+    "application/octet-stream"
+  );
+
+}
+
+
+/* =========================================================
+   MODES
+========================================================= */
+
+function setMode(
+  mode,
+  button
+){
+
+  currentMode =
+    mode;
+
+
+  document
+    .querySelectorAll(
+      ".mode"
+    )
+    .forEach(
+      item => {
+
+        item.classList.remove(
+          "active"
+        );
+
+      }
     );
 
-    return;
+
+  if(button){
+
+    button.classList.add(
+      "active"
+    );
 
   }
 
-  const recognition =
-    new Recognition();
 
-  recognition.lang =
-    document.getElementById(
-      "languageSelect"
-    ).value;
+  const placeholders = {
 
-  recognition.interimResults =
-    false;
+    chat:
+      "Message à Wiener IA...",
 
-  recognition.continuous =
-    false;
+    search:
+      "Que voulez-vous rechercher ?",
 
-  recognition.onresult =
-    event => {
+    exercise:
+      "Collez votre exercice ici...",
 
-      const transcript =
-        event.results[0][0]
-          .transcript;
+    image:
+      "Décrivez l'image à générer..."
 
-      input.value +=
-        (
-          input.value
-            ? " "
-            : ""
-        ) +
-        transcript;
+  };
 
-      resizeTextarea(input);
 
-    };
+  input.placeholder =
+    placeholders[mode] ||
+    placeholders.chat;
 
-  recognition.start();
+
+  input.focus();
 
 }
 
@@ -2077,28 +3647,20 @@ function startVoice(){
    SUGGESTION
 ========================================================= */
 
-function useSuggestion(text){
+function useSuggestion(
+  text
+){
 
   input.value =
     text;
 
-  resizeTextarea(input);
+
+  resizeTextarea(
+    input
+  );
+
 
   input.focus();
-
-}
-
-
-/* =========================================================
-   FEEDBACK
-========================================================= */
-
-function feedback(type){
-
-  console.log(
-    "Wiener IA feedback:",
-    type
-  );
 
 }
 
@@ -2109,14 +3671,49 @@ function feedback(type){
 
 function toggleTheme(){
 
-  document.body.classList.toggle("dark");
+  const isDark =
+    document.body.classList.contains(
+      "dark"
+    );
+
+
+  setTheme(
+    isDark
+      ? "light"
+      : "dark"
+  );
+
+}
+
+
+function setTheme(
+  theme
+){
+
+  document.body.classList.toggle(
+    "dark",
+    theme === "dark"
+  );
+
 
   localStorage.setItem(
     "wiener_theme",
-    document.body.classList.contains("dark")
-      ? "dark"
-      : "light"
+    theme
   );
+
+
+  const select =
+    document.getElementById(
+      "themeSelect"
+    );
+
+
+  if(select){
+
+    select.value =
+      theme;
+
+  }
 
 }
 
@@ -2128,8 +3725,12 @@ function toggleTheme(){
 function openSettings(){
 
   document
-    .getElementById("settingsModal")
-    .classList.add("show");
+    .getElementById(
+      "settingsModal"
+    )
+    .classList.add(
+      "open"
+    );
 
 }
 
@@ -2137,14 +3738,20 @@ function openSettings(){
 function closeSettings(){
 
   document
-    .getElementById("settingsModal")
-    .classList.remove("show");
+    .getElementById(
+      "settingsModal"
+    )
+    .classList.remove(
+      "open"
+    );
 
 }
 
 
 document
-  .getElementById("languageSelect")
+  .getElementById(
+    "languageSelect"
+  )
   .addEventListener(
     "change",
     event => {
@@ -2159,7 +3766,9 @@ document
 
 
 document
-  .getElementById("autoSpeak")
+  .getElementById(
+    "autoSpeak"
+  )
   .addEventListener(
     "change",
     event => {
@@ -2168,6 +3777,27 @@ document
         "wiener_auto_speak",
         event.target.value
       );
+
+    }
+  );
+
+
+document
+  .getElementById(
+    "settingsModal"
+  )
+  .addEventListener(
+    "click",
+    event => {
+
+      if(
+        event.target.id ===
+        "settingsModal"
+      ){
+
+        closeSettings();
+
+      }
 
     }
   );
@@ -2184,29 +3814,33 @@ function exportConversation(){
     !currentConversation.messages.length
   ){
 
-    alert(
-      "Cette conversation est vide."
+    showToast(
+      "Conversation vide"
     );
 
     return;
 
   }
 
+
   let content =
     "# " +
     currentConversation.title +
     "\n\n";
 
+
   currentConversation.messages.forEach(
     message => {
 
+      const author =
+        message.role === "user"
+          ? "Vous"
+          : "Wiener IA";
+
+
       content +=
         "## " +
-        (
-          message.role === "user"
-            ? "Vous"
-            : "Wiener IA"
-        ) +
+        author +
         "\n\n" +
         message.content +
         "\n\n";
@@ -2214,21 +3848,32 @@ function exportConversation(){
     }
   );
 
+
   const blob =
     new Blob(
       [content],
       {
-        type:"text/markdown"
+        type:
+          "text/markdown;charset=utf-8"
       }
     );
 
+
   const url =
-    URL.createObjectURL(blob);
+    URL.createObjectURL(
+      blob
+    );
+
 
   const a =
-    document.createElement("a");
+    document.createElement(
+      "a"
+    );
 
-  a.href = url;
+
+  a.href =
+    url;
+
 
   a.download =
     (
@@ -2237,29 +3882,53 @@ function exportConversation(){
           /[^a-z0-9]/gi,
           "_"
         ) ||
-      "conversation"
+      "wiener_conversation"
     ) +
     ".md";
 
+
+  document.body.appendChild(a);
+
   a.click();
 
-  URL.revokeObjectURL(url);
+  a.remove();
+
+
+  URL.revokeObjectURL(
+    url
+  );
+
+
+  showToast(
+    "Conversation exportée"
+  );
 
 }
 
 
 /* =========================================================
-   SUPPRESSION HISTORIQUE
+   SUPPRESSION
 ========================================================= */
 
 function clearAllHistory(){
+
+  if(!conversations.length){
+
+    return;
+
+  }
+
 
   if(
     !confirm(
       "Supprimer toutes les conversations ?"
     )
-  )
+  ){
+
     return;
+
+  }
+
 
   conversations = [];
 
@@ -2267,9 +3936,17 @@ function clearAllHistory(){
     "wiener_conversations"
   );
 
-  createFreshConversation(false);
+
+  createConversation();
 
   renderHistory();
+
+  renderConversation();
+
+
+  showToast(
+    "Historique supprimé"
+  );
 
 }
 
@@ -2281,9 +3958,15 @@ function clearAllHistory(){
 function saveConversations(){
 
   localStorage.setItem(
+
     "wiener_conversations",
-    JSON.stringify(conversations)
+
+    JSON.stringify(
+      conversations
+    )
+
   );
+
 
   renderHistory();
 
@@ -2294,7 +3977,9 @@ function saveConversations(){
    CLAVIER
 ========================================================= */
 
-function handleKey(event){
+function handleKey(
+  event
+){
 
   if(
     event.key === "Enter" &&
@@ -2314,10 +3999,13 @@ function handleKey(event){
    TEXTAREA
 ========================================================= */
 
-function resizeTextarea(element){
+function resizeTextarea(
+  element
+){
 
   element.style.height =
     "auto";
+
 
   element.style.height =
     Math.min(
@@ -2348,15 +4036,13 @@ function scrollBottom(){
 
 
 /* =========================================================
-   SIDEBAR
+   SIDEBAR MOBILE
 ========================================================= */
 
 function toggleSidebar(){
 
-  sidebar.classList.toggle("open");
-
-  overlay.classList.toggle(
-    "show"
+  sidebar.classList.toggle(
+    "open"
   );
 
 }
@@ -2364,29 +4050,125 @@ function toggleSidebar(){
 
 function closeSidebar(){
 
-  sidebar.classList.remove("open");
-
-  overlay.classList.remove(
-    "show"
+  sidebar.classList.remove(
+    "open"
   );
 
 }
 
 
 /* =========================================================
-   ESCAPE
+   TOAST
 ========================================================= */
 
-function escapeHTML(text){
+let toastTimer = null;
 
-  return String(text)
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
+
+function showToast(
+  message
+){
+
+  const toast =
+    document.getElementById(
+      "toast"
+    );
+
+
+  toast.textContent =
+    message;
+
+
+  toast.classList.add(
+    "show"
+  );
+
+
+  clearTimeout(
+    toastTimer
+  );
+
+
+  toastTimer =
+    setTimeout(
+      () => {
+
+        toast.classList.remove(
+          "show"
+        );
+
+      },
+      2200
+    );
 
 }
+
+
+/* =========================================================
+   ESCAPE HTML
+========================================================= */
+
+function escapeHTML(
+  text
+){
+
+  return String(text)
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+    .replace(
+      /</g,
+      "&lt;"
+    )
+    .replace(
+      />/g,
+      "&gt;"
+    )
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+    .replace(
+      /'/g,
+      "&#039;"
+    );
+
+}
+
+
+/* =========================================================
+   RACCOURCIS
+========================================================= */
+
+document.addEventListener(
+  "keydown",
+  event => {
+
+    if(
+      event.key === "Escape"
+    ){
+
+      closeSettings();
+
+      closeSidebar();
+
+    }
+
+
+    if(
+      (event.ctrlKey ||
+       event.metaKey) &&
+      event.key.toLowerCase() === "k"
+    ){
+
+      event.preventDefault();
+
+      newChat();
+
+    }
+
+  }
+);
 
 
 /* =========================================================
