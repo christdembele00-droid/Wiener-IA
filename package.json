@@ -1,7 +1,6 @@
-```json
 {
   "name": "wiener-ia",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Wiener IA - assistant intelligent",
   "main": "server.js",
   "scripts": {
@@ -13,4 +12,3 @@
     "openai": "^4.104.0"
   }
 }
-```
