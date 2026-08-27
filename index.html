@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta name="google-site-verification" content="OJQn2i-K_zf5V3ZprWmKkOiPJHET7b2FCJOt5jshvdQ">
+
+<title>Wiener IA - Créée par Dembele Christ</title>
+
+<meta name="description" content="Wiener IA - Intelligence artificielle créée par Dembele Christ">
+<meta name="keywords" content="Wiener IA, IA, ChatGPT, Gemini, Intelligence Artificielle, Dembele Christ">
+<meta name="author" content="Dembele Christ">
+<meta name="robots" content="index,follow">
+
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar">
+
+        <div class="logo">
+            <h1>🤖 Wiener IA</h1>
+            <p>Créée par Dembele Christ</p>
+        </div>
+
+        <button id="newChatBtn" class="menu-btn">
+            ➕ Nouveau chat
+        </button>
+
+        <div class="tools">
+
+            <button class="tool-btn" id="chatMode">
+                💬 Chat IA
+            </button>
+
+            <button class="tool-btn" id="exerciseMode">
+                📚 Exercices
+            </button>
+
+            <button class="tool-btn" id="searchMode">
+                🌐 Recherche Web
+            </button>
+
+            <button class="tool-btn" id="imageMode">
+                🎨 Images IA
+            </button>
+
+            <button class="tool-btn" id="pdfMode">
+                📄 Analyse PDF
+            </button>
+
+            <button class="tool-btn" id="calculatorMode">
+                🧮 Calculatrice
+            </button>
+
+        </div>
+
+        <div class="sidebar-footer">
+            Wiener IA v2.0
+        </div>
+
+    </aside>
+
+    <!-- MAIN -->
+
+    <main class="main">
+
+        <header class="topbar">
+
+            <div class="top-title">
+                Wiener IA
+            </div>
+
+            <a
+            href="https://wiener-ia.onrender.com/api/health"
+            target="_blank"
+            class="status-btn">
+                ⚡ API
+            </a>
+
+        </header>
+
+        <!-- WELCOME -->
+
+        <section id="welcomeScreen">
+
+            <h2>Bienvenue sur Wiener IA</h2>
+
+            <p>
+                Une intelligence artificielle moderne
+                capable de répondre aux questions,
+                résoudre des exercices,
+                effectuer des recherches,
+                analyser des documents
+                et générer des images.
+            </p>
+
+            <div class="welcome-cards">
+
+                <div class="card">
+                    💬
+                    <h3>Chat IA</h3>
+                    <p>Réponses rapides et intelligentes.</p>
+                </div>
+
+                <div class="card">
+                    📚
+                    <h3>Exercices</h3>
+                    <p>Résolution détaillée étape par étape.</p>
+                </div>
+
+                <div class="card">
+                    🌐
+                    <h3>Recherche</h3>
+                    <p>Informations récentes et fiables.</p>
+                </div>
+
+                <div class="card">
+                    🎨
+                    <h3>Images</h3>
+                    <p>Création d'images IA.</p>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- CHAT -->
+
+        <section id="chatContainer">
+
+            <div id="messages">
+
+                <div class="message assistant">
+                    Bonjour 👋<br><br>
+                    Je suis <b>Wiener IA</b>,
+                    créée par <b>Dembele Christ</b>.
+                    Comment puis-je vous aider ?
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- INPUT -->
+
+        <footer class="chat-footer">
+
+            <div class="input-area">
+
+                <textarea
+                id="userInput"
+                placeholder="Écrivez votre message..."
+                rows="1"></textarea>
+
+                <button id="sendBtn">
+                    Envoyer
+                </button>
+
+            </div>
+
+        </footer>
+
+    </main>
+
+</div>
+
+<script src="app.js"></script>
+
+</body>
+</html>
