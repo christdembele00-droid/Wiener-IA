@@ -8,12 +8,14 @@
 
 <title>Wiener IA - Créée par Dembele Christ</title>
 
-<meta name="description" content="Wiener IA - Intelligence artificielle créée par Dembele Christ">
-<meta name="keywords" content="Wiener IA, IA, ChatGPT, Gemini, Intelligence Artificielle, Dembele Christ">
+<meta name="description" content="Wiener IA - Intelligence artificielle moderne créée par Dembele Christ">
+<meta name="keywords" content="Wiener IA, IA, Gemini, ChatGPT, Intelligence Artificielle">
 <meta name="author" content="Dembele Christ">
-<meta name="robots" content="index,follow">
 
 <link rel="stylesheet" href="style.css">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 
 <body>
@@ -24,38 +26,42 @@
 
     <aside class="sidebar">
 
-        <div class="logo">
-            <h1>🤖 Wiener IA</h1>
-            <p>Créée par Dembele Christ</p>
+        <div class="logo-box">
+            <div class="logo-circle">W</div>
+
+            <div>
+                <h1>Wiener IA</h1>
+                <p>Créée par Dembele Christ</p>
+            </div>
         </div>
 
-        <button id="newChatBtn" class="menu-btn">
-            ➕ Nouveau chat
+        <button class="new-chat-btn" id="newChatBtn">
+            + Nouvelle conversation
         </button>
 
-        <div class="tools">
+        <div class="menu">
 
-            <button class="tool-btn" id="chatMode">
+            <button class="menu-item" data-mode="chat">
                 💬 Chat IA
             </button>
 
-            <button class="tool-btn" id="exerciseMode">
+            <button class="menu-item" data-mode="exercise">
                 📚 Exercices
             </button>
 
-            <button class="tool-btn" id="searchMode">
+            <button class="menu-item" data-mode="search">
                 🌐 Recherche Web
             </button>
 
-            <button class="tool-btn" id="imageMode">
-                🎨 Images IA
+            <button class="menu-item" data-mode="image">
+                🎨 Génération d'images
             </button>
 
-            <button class="tool-btn" id="pdfMode">
+            <button class="menu-item" data-mode="pdf">
                 📄 Analyse PDF
             </button>
 
-            <button class="tool-btn" id="calculatorMode">
+            <button class="menu-item" data-mode="calculator">
                 🧮 Calculatrice
             </button>
 
@@ -73,58 +79,52 @@
 
         <header class="topbar">
 
-            <div class="top-title">
+            <div class="title">
                 Wiener IA
             </div>
 
-            <a
-            href="https://wiener-ia.onrender.com/api/health"
-            target="_blank"
-            class="status-btn">
-                ⚡ API
-            </a>
+            <div class="status">
+                🟢 En ligne
+            </div>
 
         </header>
 
-        <!-- WELCOME -->
+        <section class="welcome" id="welcome">
 
-        <section id="welcomeScreen">
-
-            <h2>Bienvenue sur Wiener IA</h2>
+            <h2>
+                Bienvenue sur Wiener IA
+            </h2>
 
             <p>
-                Une intelligence artificielle moderne
-                capable de répondre aux questions,
-                résoudre des exercices,
-                effectuer des recherches,
-                analyser des documents
+                Une intelligence artificielle moderne capable de répondre aux questions,
+                résoudre des exercices, effectuer des recherches, analyser des documents
                 et générer des images.
             </p>
 
-            <div class="welcome-cards">
+            <div class="cards">
 
                 <div class="card">
-                    💬
+                    <span>💬</span>
                     <h3>Chat IA</h3>
                     <p>Réponses rapides et intelligentes.</p>
                 </div>
 
                 <div class="card">
-                    📚
+                    <span>📚</span>
                     <h3>Exercices</h3>
                     <p>Résolution détaillée étape par étape.</p>
                 </div>
 
                 <div class="card">
-                    🌐
-                    <h3>Recherche</h3>
+                    <span>🌐</span>
+                    <h3>Recherche Web</h3>
                     <p>Informations récentes et fiables.</p>
                 </div>
 
                 <div class="card">
-                    🎨
-                    <h3>Images</h3>
-                    <p>Création d'images IA.</p>
+                    <span>🎨</span>
+                    <h3>Images IA</h3>
+                    <p>Création d'images par IA.</p>
                 </div>
 
             </div>
@@ -133,15 +133,18 @@
 
         <!-- CHAT -->
 
-        <section id="chatContainer">
+        <section class="chat-container">
 
             <div id="messages">
 
                 <div class="message assistant">
-                    Bonjour 👋<br><br>
-                    Je suis <b>Wiener IA</b>,
-                    créée par <b>Dembele Christ</b>.
-                    Comment puis-je vous aider ?
+                    👋 Bonjour !
+
+                    <br><br>
+
+                    Je suis <b>Wiener IA</b>.
+
+                    Comment puis-je vous aider aujourd'hui ?
                 </div>
 
             </div>
@@ -150,20 +153,16 @@
 
         <!-- INPUT -->
 
-        <footer class="chat-footer">
+        <footer class="input-container">
 
-            <div class="input-area">
-
-                <textarea
+            <textarea
                 id="userInput"
-                placeholder="Écrivez votre message..."
+                placeholder="Envoyez un message à Wiener IA..."
                 rows="1"></textarea>
 
-                <button id="sendBtn">
-                    Envoyer
-                </button>
-
-            </div>
+            <button id="sendBtn">
+                Envoyer
+            </button>
 
         </footer>
 
