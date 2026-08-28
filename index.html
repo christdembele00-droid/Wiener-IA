@@ -1,176 +1,812 @@
+```html
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta name="google-site-verification" content="OJQn2i-K_zf5V3ZprWmKkOiPJHET7b2FCJOt5jshvdQ">
+    <meta charset="UTF-8">
 
-<title>Wiener IA - Créée par Dembele Christ</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-<meta name="description" content="Wiener IA - Intelligence artificielle moderne créée par Dembele Christ">
-<meta name="keywords" content="Wiener IA, IA, Gemini, ChatGPT, Intelligence Artificielle">
-<meta name="author" content="Dembele Christ">
+    <meta
+        name="google-site-verification"
+        content="OJQn2i-K_zf5V3ZprWmKkOiPJHET7b2FCJOt5jshvdQ"
+    >
 
-<link rel="stylesheet" href="style.css">
+    <meta
+        name="description"
+        content="Wiener IA - Intelligence artificielle moderne créée par Dembele Christ"
+    >
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta
+        name="keywords"
+        content="Wiener IA, intelligence artificielle, Gemini, IA, exercices, recherche Web"
+    >
+
+    <meta
+        name="author"
+        content="Dembele Christ"
+    >
+
+    <meta
+        name="theme-color"
+        content="#10A37F"
+    >
+
+    <title>Wiener IA - Créée par Dembele Christ</title>
+
+
+    <!-- Police -->
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+
+    <!-- CSS -->
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
 </head>
+
 
 <body>
 
 <div class="app">
 
-    <!-- SIDEBAR -->
 
-    <aside class="sidebar">
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+
+    <aside class="sidebar" id="sidebar">
+
+
+        <!-- LOGO -->
 
         <div class="logo-box">
-            <div class="logo-circle">W</div>
 
-            <div>
-                <h1>Wiener IA</h1>
-                <p>Créée par Dembele Christ</p>
+            <div class="logo-circle">
+                W
             </div>
+
+            <div class="logo-text">
+
+                <h1>Wiener IA</h1>
+
+                <p>
+                    Créée par Dembele Christ
+                </p>
+
+            </div>
+
         </div>
 
-        <button class="new-chat-btn" id="newChatBtn">
-            + Nouvelle conversation
+
+        <!-- NOUVELLE CONVERSATION -->
+
+        <button
+            class="new-chat-btn"
+            id="newChatBtn"
+            type="button"
+        >
+            <span>＋</span>
+            Nouvelle conversation
         </button>
 
-        <div class="menu">
 
-            <button class="menu-item" data-mode="chat">
-                💬 Chat IA
+        <!-- MENU -->
+
+        <nav class="menu">
+
+
+            <button
+                class="menu-item active"
+                data-mode="chat"
+                type="button"
+            >
+                <span class="menu-icon">💬</span>
+                <span>Chat IA</span>
             </button>
 
-            <button class="menu-item" data-mode="exercise">
-                📚 Exercices
+
+            <button
+                class="menu-item"
+                data-mode="exercise"
+                type="button"
+            >
+                <span class="menu-icon">📚</span>
+                <span>Exercices</span>
             </button>
 
-            <button class="menu-item" data-mode="search">
-                🌐 Recherche Web
+
+            <button
+                class="menu-item"
+                data-mode="search"
+                type="button"
+            >
+                <span class="menu-icon">🌐</span>
+                <span>Recherche Web</span>
             </button>
 
-            <button class="menu-item" data-mode="image">
-                🎨 Génération d'images
+
+            <button
+                class="menu-item"
+                data-mode="image"
+                type="button"
+            >
+                <span class="menu-icon">🎨</span>
+                <span>Génération d'images</span>
             </button>
 
-            <button class="menu-item" data-mode="pdf">
-                📄 Analyse PDF
+
+            <button
+                class="menu-item"
+                data-mode="pdf"
+                type="button"
+            >
+                <span class="menu-icon">📄</span>
+                <span>Analyse PDF</span>
             </button>
 
-            <button class="menu-item" data-mode="calculator">
-                🧮 Calculatrice
+
+            <button
+                class="menu-item"
+                data-mode="calculator"
+                type="button"
+            >
+                <span class="menu-icon">🧮</span>
+                <span>Calculatrice</span>
             </button>
 
-        </div>
+        </nav>
+
+
+        <!-- FOOTER -->
 
         <div class="sidebar-footer">
-            Wiener IA v2.0
+
+            <div>
+                Wiener IA
+            </div>
+
+            <small>
+                Version 2.0
+            </small>
+
         </div>
 
     </aside>
 
-    <!-- MAIN -->
+
+    <!-- =====================================================
+         MAIN
+    ====================================================== -->
 
     <main class="main">
 
+
+        <!-- TOPBAR -->
+
         <header class="topbar">
 
-            <div class="title">
-                Wiener IA
+            <div class="topbar-left">
+
+                <button
+                    class="mobile-menu-btn"
+                    id="mobileMenuBtn"
+                    type="button"
+                    aria-label="Ouvrir le menu"
+                >
+                    ☰
+                </button>
+
+                <div class="title">
+                    Wiener IA
+                </div>
+
             </div>
 
+
             <div class="status">
-                🟢 En ligne
+
+                <span class="status-dot"></span>
+
+                <span>
+                    En ligne
+                </span>
+
             </div>
 
         </header>
 
-        <section class="welcome" id="welcome">
+
+        <!-- =================================================
+             ZONE D'ACCUEIL
+        ================================================== -->
+
+        <section
+            class="welcome"
+            id="welcome"
+        >
+
+            <div class="welcome-icon">
+                W
+            </div>
+
 
             <h2>
                 Bienvenue sur Wiener IA
             </h2>
 
+
             <p>
-                Une intelligence artificielle moderne capable de répondre aux questions,
-                résoudre des exercices, effectuer des recherches, analyser des documents
-                et générer des images.
+
+                Une intelligence artificielle moderne capable
+                de répondre à vos questions, résoudre des
+                exercices, rechercher des informations,
+                analyser vos documents et générer des images.
+
             </p>
+
+
+            <!-- CARTES -->
 
             <div class="cards">
 
-                <div class="card">
-                    <span>💬</span>
-                    <h3>Chat IA</h3>
-                    <p>Réponses rapides et intelligentes.</p>
-                </div>
 
-                <div class="card">
-                    <span>📚</span>
-                    <h3>Exercices</h3>
-                    <p>Résolution détaillée étape par étape.</p>
-                </div>
+                <button
+                    class="card"
+                    data-card-mode="chat"
+                    type="button"
+                >
 
-                <div class="card">
-                    <span>🌐</span>
-                    <h3>Recherche Web</h3>
-                    <p>Informations récentes et fiables.</p>
-                </div>
+                    <span class="card-icon">
+                        💬
+                    </span>
 
-                <div class="card">
-                    <span>🎨</span>
-                    <h3>Images IA</h3>
-                    <p>Création d'images par IA.</p>
-                </div>
+                    <h3>
+                        Chat IA
+                    </h3>
+
+                    <p>
+                        Posez vos questions et obtenez
+                        des réponses intelligentes.
+                    </p>
+
+                </button>
+
+
+                <button
+                    class="card"
+                    data-card-mode="exercise"
+                    type="button"
+                >
+
+                    <span class="card-icon">
+                        📚
+                    </span>
+
+                    <h3>
+                        Exercices
+                    </h3>
+
+                    <p>
+                        Résolution détaillée étape par étape.
+                    </p>
+
+                </button>
+
+
+                <button
+                    class="card"
+                    data-card-mode="search"
+                    type="button"
+                >
+
+                    <span class="card-icon">
+                        🌐
+                    </span>
+
+                    <h3>
+                        Recherche Web
+                    </h3>
+
+                    <p>
+                        Recherchez des informations récentes
+                        sur Internet.
+                    </p>
+
+                </button>
+
+
+                <button
+                    class="card"
+                    data-card-mode="image"
+                    type="button"
+                >
+
+                    <span class="card-icon">
+                        🎨
+                    </span>
+
+                    <h3>
+                        Images IA
+                    </h3>
+
+                    <p>
+                        Créez des images à partir
+                        d'une description.
+                    </p>
+
+                </button>
+
+
+                <button
+                    class="card"
+                    data-card-mode="pdf"
+                    type="button"
+                >
+
+                    <span class="card-icon">
+                        📄
+                    </span>
+
+                    <h3>
+                        Documents
+                    </h3>
+
+                    <p>
+                        Analysez vos PDF et images.
+                    </p>
+
+                </button>
+
+
+                <button
+                    class="card"
+                    data-card-mode="calculator"
+                    type="button"
+                >
+
+                    <span class="card-icon">
+                        🧮
+                    </span>
+
+                    <h3>
+                        Calculatrice
+                    </h3>
+
+                    <p>
+                        Effectuez rapidement vos calculs.
+                    </p>
+
+                </button>
+
 
             </div>
 
         </section>
 
-        <!-- CHAT -->
 
-        <section class="chat-container">
+        <!-- =================================================
+             CHAT
+        ================================================== -->
 
-            <div id="messages">
+        <section
+            class="chat-container"
+            id="chatContainer"
+        >
+
+            <div
+                id="messages"
+                class="messages"
+            >
 
                 <div class="message assistant">
-                    👋 Bonjour !
 
-                    <br><br>
+                    <div class="message-content">
 
-                    Je suis <b>Wiener IA</b>.
+                        👋 Bonjour !
 
-                    Comment puis-je vous aider aujourd'hui ?
+                        <br><br>
+
+                        Je suis
+                        <strong>Wiener IA</strong>.
+
+                        <br><br>
+
+                        Je peux vous aider avec vos questions,
+                        vos exercices, vos recherches,
+                        vos documents et bien plus encore.
+
+                    </div>
+
                 </div>
 
             </div>
 
         </section>
 
-        <!-- INPUT -->
 
-        <footer class="input-container">
+        <!-- =================================================
+             FICHIER SÉLECTIONNÉ
+        ================================================== -->
 
-            <textarea
-                id="userInput"
-                placeholder="Envoyez un message à Wiener IA..."
-                rows="1"></textarea>
+        <div
+            class="file-preview"
+            id="filePreview"
+            hidden
+        >
 
-            <button id="sendBtn">
-                Envoyer
+            <div class="file-info">
+
+                <span
+                    class="file-icon"
+                    id="fileIcon"
+                >
+                    📄
+                </span>
+
+                <div>
+
+                    <strong id="fileName">
+                        Aucun fichier
+                    </strong>
+
+                    <small id="fileSize">
+                        0 KB
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <button
+                type="button"
+                id="removeFileBtn"
+                class="remove-file-btn"
+                aria-label="Supprimer le fichier"
+            >
+                ×
             </button>
 
+        </div>
+
+
+        <!-- =================================================
+             INPUT
+        ================================================== -->
+
+        <footer class="input-area">
+
+
+            <div class="input-container">
+
+
+                <!-- INPUT FICHIER -->
+
+                <input
+                    type="file"
+                    id="fileInput"
+                    accept=".pdf,image/png,image/jpeg,image/webp,application/pdf"
+                    hidden
+                >
+
+
+                <button
+                    type="button"
+                    id="attachBtn"
+                    class="attach-btn"
+                    title="Ajouter un fichier"
+                    aria-label="Ajouter un fichier"
+                >
+                    📎
+                </button>
+
+
+                <!-- TEXTAREA -->
+
+                <textarea
+                    id="userInput"
+                    placeholder="Envoyez un message à Wiener IA..."
+                    rows="1"
+                    maxlength="20000"
+                ></textarea>
+
+
+                <!-- ENVOYER -->
+
+                <button
+                    id="sendBtn"
+                    type="button"
+                    class="send-btn"
+                >
+                    <span class="send-text">
+                        Envoyer
+                    </span>
+
+                    <span class="send-icon">
+                        ➤
+                    </span>
+                </button>
+
+            </div>
+
+
+            <div class="input-hint">
+
+                Wiener IA peut parfois faire des erreurs.
+                Vérifiez les informations importantes.
+
+            </div>
+
         </footer>
+
 
     </main>
 
 </div>
 
+
+<!-- =========================================================
+     JAVASCRIPT
+========================================================= -->
+
 <script src="app.js"></script>
+
+
+<!-- =========================================================
+     PETIT SCRIPT INTERFACE FICHIER
+========================================================= -->
+
+<script>
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    const fileInput =
+        document.getElementById("fileInput");
+
+    const attachBtn =
+        document.getElementById("attachBtn");
+
+    const filePreview =
+        document.getElementById("filePreview");
+
+    const fileName =
+        document.getElementById("fileName");
+
+    const fileSize =
+        document.getElementById("fileSize");
+
+    const fileIcon =
+        document.getElementById("fileIcon");
+
+    const removeFileBtn =
+        document.getElementById("removeFileBtn");
+
+    const userInput =
+        document.getElementById("userInput");
+
+
+    /*
+       Fichier actuellement sélectionné.
+       app.js peut récupérer cette variable
+       avec window.wienerSelectedFile.
+    */
+
+    window.wienerSelectedFile = null;
+
+
+    attachBtn.addEventListener(
+        "click",
+        () => {
+
+            fileInput.click();
+
+        }
+    );
+
+
+    fileInput.addEventListener(
+        "change",
+        () => {
+
+            const file =
+                fileInput.files?.[0];
+
+            if (!file) {
+                return;
+            }
+
+
+            window.wienerSelectedFile =
+                file;
+
+
+            filePreview.hidden =
+                false;
+
+
+            fileName.textContent =
+                file.name;
+
+
+            fileSize.textContent =
+                formatFileSize(
+                    file.size
+                );
+
+
+            if (
+                file.type ===
+                "application/pdf"
+            ) {
+
+                fileIcon.textContent =
+                    "📄";
+
+            } else {
+
+                fileIcon.textContent =
+                    "🖼️";
+
+            }
+
+
+            userInput.placeholder =
+                "Que voulez-vous savoir sur ce fichier ?";
+
+        }
+    );
+
+
+    removeFileBtn.addEventListener(
+        "click",
+        () => {
+
+            fileInput.value =
+                "";
+
+            window.wienerSelectedFile =
+                null;
+
+            filePreview.hidden =
+                true;
+
+            fileName.textContent =
+                "Aucun fichier";
+
+            fileSize.textContent =
+                "0 KB";
+
+            fileIcon.textContent =
+                "📄";
+
+            userInput.placeholder =
+                "Envoyez un message à Wiener IA...";
+
+        }
+    );
+
+
+    function formatFileSize(bytes) {
+
+        if (
+            bytes < 1024
+        ) {
+
+            return bytes + " octets";
+
+        }
+
+
+        if (
+            bytes < 1024 * 1024
+        ) {
+
+            return (
+                (bytes / 1024)
+                    .toFixed(1) +
+                " KB"
+            );
+
+        }
+
+
+        return (
+            (bytes / (1024 * 1024))
+                .toFixed(1) +
+            " MB"
+        );
+
+    }
+
+
+    /*
+       Cartes d'accueil.
+    */
+
+    document
+        .querySelectorAll("[data-card-mode]")
+        .forEach((card) => {
+
+            card.addEventListener(
+                "click",
+                () => {
+
+                    const mode =
+                        card.dataset.cardMode;
+
+                    const menuButton =
+                        document.querySelector(
+                            `.menu-item[data-mode="${mode}"]`
+                        );
+
+                    if (menuButton) {
+                        menuButton.click();
+                    }
+
+                    userInput.focus();
+
+                }
+            );
+
+        });
+
+
+    /*
+       Menu mobile.
+    */
+
+    const mobileMenuBtn =
+        document.getElementById(
+            "mobileMenuBtn"
+        );
+
+    const sidebar =
+        document.getElementById(
+            "sidebar"
+        );
+
+
+    if (
+        mobileMenuBtn &&
+        sidebar
+    ) {
+
+        mobileMenuBtn.addEventListener(
+            "click",
+            () => {
+
+                sidebar.classList.toggle(
+                    "mobile-open"
+                );
+
+            }
+        );
+
+    }
+
+});
+
+</script>
 
 </body>
 </html>
+```
