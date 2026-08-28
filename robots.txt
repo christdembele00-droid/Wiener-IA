@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://christdembele00-droid.github.io/Wiener-IA/sitemap.xml
