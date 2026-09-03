@@ -8,13 +8,25 @@
   <meta name="keywords" content="Wiener IA, intelligence artificielle, Gemini, IA, exercices, recherche Web">
   <meta name="author" content="Dembele Christ">
   <meta name="theme-color" content="#10A37F">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
   <title>Wiener IA - Créée par Dembele Christ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <style>
+    #wienerSplash{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#212121;transition:opacity .35s ease,visibility .35s ease}
+    #wienerSplash.is-hidden{opacity:0;visibility:hidden;pointer-events:none}
+    #wienerSplash .splash-inner{text-align:center;color:#fff;font-family:Inter,system-ui,sans-serif}
+    #wienerSplash .splash-logo{width:88px;height:88px;margin:0 auto 18px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#10A37F;color:#fff;font-size:48px;font-weight:800;box-shadow:0 0 30px rgba(16,163,127,.35)}
+    #wienerSplash .splash-name{font-size:28px;font-weight:700;letter-spacing:-.5px}
+  </style>
 </head>
 <body>
+<div id="wienerSplash" aria-hidden="true"><div class="splash-inner"><div class="splash-logo">W</div><div class="splash-name">Wiener IA</div></div></div>
 <div class="app">
   <aside class="sidebar" id="sidebar">
     <div class="logo-box">
@@ -89,6 +101,15 @@
 <script src="app.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+  const splash = document.getElementById("wienerSplash");
+  window.setTimeout(() => splash?.classList.add("is-hidden"), 4000);
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js", { scope: "./" }).catch(() => {});
+    });
+  }
+
   const fileInput = document.getElementById("fileInput");
   const attachBtn = document.getElementById("attachBtn");
   const filePreview = document.getElementById("filePreview");
