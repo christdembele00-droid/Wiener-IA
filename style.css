@@ -103,6 +103,63 @@ font-size:12px;
 color:#888;
 }
 
+/* STATUS / VOYANTS */
+
+.status{
+color:#10A37F;
+font-weight:600;
+display:flex;
+align-items:center;
+gap:8px;
+}
+
+.status-dot,
+.status-indicator,
+.online-dot,
+.health-dot,
+.success-dot{
+width:9px;
+height:9px;
+min-width:9px;
+border-radius:50%;
+background:#10A37F;
+box-shadow:0 0 8px rgba(16,163,127,.75);
+display:inline-block;
+}
+
+.status-dot::before,
+.status-indicator::before,
+.online-dot::before,
+.health-dot::before,
+.success-dot::before{
+content:"";
+display:block;
+width:100%;
+height:100%;
+border-radius:50%;
+background:#10A37F;
+}
+
+/* Toute indication visuelle d'état reste verte lorsqu'elle représente un état opérationnel. */
+[data-status="online"],
+[data-status="connected"],
+[data-status="ready"],
+[data-state="online"],
+[data-state="connected"],
+[data-state="ready"]{
+color:#10A37F !important;
+}
+
+[data-status="online"] .status-dot,
+[data-status="connected"] .status-dot,
+[data-status="ready"] .status-dot,
+[data-state="online"] .status-dot,
+[data-state="connected"] .status-dot,
+[data-state="ready"] .status-dot{
+background:#10A37F !important;
+box-shadow:0 0 8px rgba(16,163,127,.75);
+}
+
 /* MAIN */
 
 .main{
@@ -126,11 +183,6 @@ border-bottom:1px solid #2f2f2f;
 .title{
 font-size:22px;
 font-weight:700;
-}
-
-.status{
-color:#10A37F;
-font-weight:600;
 }
 
 /* WELCOME */
