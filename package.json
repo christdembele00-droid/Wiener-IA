@@ -1,7 +1,6 @@
-```json
 {
   "name": "wiener-ia",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Wiener IA - Intelligence artificielle créée par Dembele Christ",
   "main": "server.js",
   "scripts": {
@@ -16,4 +15,3 @@
     "express": "^5.1.0"
   }
 }
-```
