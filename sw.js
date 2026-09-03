@@ -1,4 +1,4 @@
-const CACHE_NAME = "wiener-ia-v4";
+const CACHE_NAME = "wiener-ia-v5";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -30,7 +30,6 @@ self.addEventListener("fetch", event => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-
   event.respondWith(
     fetch(request)
       .then(response => {
