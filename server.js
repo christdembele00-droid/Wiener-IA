@@ -5,18 +5,21 @@ const cors = require("cors");
 const path = require("path");
 const { GoogleGenAI } = require("@google/genai");
 const { CausalEngine } = require("./causal_engine");
+const { MemoryStore } = require("./memory_store");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 10000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || "gemini-2.5-flash";
+const TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || "gemini-3.6-flash";
+const FALLBACK_MODELS = [TEXT_MODEL, "gemini-2.5-flash", "gemini-3.7-flash", "gemini-3.8-flash"].filter((v, i, a) => v && a.indexOf(v) === i);
 const MAX_MESSAGES = 30;
 const MAX_MESSAGE_LENGTH = 20000;
 const ai = GEMINI_API_KEY ? new GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
 const causal = new CausalEngine();
+const memory = new MemoryStore();
 
 app.disable("x-powered-by");
-app.use(cors({ origin: true, methods: ["GET", "POST", "OPTIONS"], allowedHeaders: ["Content-Type"] }));
+app.use(cors({ origin: true, methods: ["GET", "POST", "DELETE", "OPTIONS"], allowedHeaders: ["Content-Type"] }));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.static(__dirname));
 
@@ -31,35 +34,75 @@ function requireGemini(res) {
   }
   return true;
 }
+
 function cleanMessages(messages) {
   if (!Array.isArray(messages)) return [];
   return messages.filter(m => m && typeof m === "object" && ["user", "assistant", "model"].includes(m.role) && typeof m.content === "string" && m.content.trim())
     .map(m => ({ role: m.role === "assistant" || m.role === "model" ? "model" : "user", content: m.content.trim().slice(0, MAX_MESSAGE_LENGTH) }))
     .slice(-MAX_MESSAGES);
 }
+
 function toGemini(messages) { return messages.map(m => ({ role: m.role, parts: [{ text: m.content }] })); }
+
 function extractText(response) {
   if (typeof response?.text === "string" && response.text.trim()) return response.text.trim();
   const parts = response?.candidates?.flatMap(c => Array.isArray(c?.content?.parts) ? c.content.parts : []) || [];
   return parts.filter(p => typeof p?.text === "string").map(p => p.text).join("\n").trim();
 }
+
+function errorStatus(error) {
+  return Number(error?.status) || Number(error?.statusCode) || Number(error?.response?.status) || 500;
+}
+
 function sendError(res, error) {
   console.error("Wiener IA error:", error);
-  const status = Number(error?.status) || Number(error?.statusCode) || 500;
+  const status = errorStatus(error);
   if (status === 401 || status === 403) return res.status(status).json({ error: "La clé Gemini est invalide ou non autorisée." });
-  if (status === 404) return res.status(404).json({ error: "Le modèle Gemini demandé est indisponible." });
+  if (status === 404) return res.status(404).json({ error: "Aucun modèle Gemini disponible pour cette clé. Vérifie le projet Google AI utilisé par GEMINI_API_KEY." });
   if (status === 429) return res.status(429).json({ error: "La limite Gemini a été atteinte. Réessaie plus tard." });
   return res.status(500).json({ error: error?.message || "Une erreur est survenue avec Gemini." });
 }
+
+async function generateContent(options) {
+  let lastError = null;
+  for (const model of FALLBACK_MODELS) {
+    try {
+      const response = await ai.models.generateContent({ ...options, model });
+      return { response, model };
+    } catch (error) {
+      lastError = error;
+      const status = errorStatus(error);
+      if (![404, 400].includes(status)) throw error;
+      console.warn(`Modèle Gemini indisponible: ${model}; tentative suivante.`);
+    }
+  }
+  throw lastError || new Error("Aucun modèle Gemini disponible.");
+}
+
+function memoryContext(query) {
+  const matches = memory.search(query, 6);
+  if (!matches.length) return "";
+  return "\nMémoire pertinente de Wiener IA (utilise-la comme contexte, pas comme vérité absolue):\n" + matches.map(m => `- ${m.role}: ${m.content}`).join("\n");
+}
+
 function causalContext(state) {
   return `\nPolitique fonctionnelle: tâche=${state.D.task}, profondeur=${state.F.depth}, vérification=${state.F.verify ? "oui" : "non"}, recherche=${state.F.search ? "oui" : "non"}.`;
 }
 
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "index.html")));
-app.get("/api/health", (req, res) => res.status(200).json({ ok: true, service: "Wiener IA", geminiConfigured: Boolean(ai), textModel: TEXT_MODEL, causalAudit: causal.audit(), time: new Date().toISOString() }));
+app.get("/api/health", (req, res) => res.status(200).json({ ok: true, service: "Wiener IA", geminiConfigured: Boolean(ai), textModel: TEXT_MODEL, availableModelCandidates: FALLBACK_MODELS, memoryCount: memory.count(), causalAudit: causal.audit(), time: new Date().toISOString() }));
 app.get("/health", (req, res) => res.status(200).json({ ok: true, service: "Wiener IA" }));
 app.get("/api/causal/state", (req, res) => res.json(causal.snapshot()));
 app.get("/api/causal/audit", (req, res) => res.json(causal.audit()));
+app.get("/api/memory", (req, res) => res.json({ count: memory.count(), items: memory.recent(50) }));
+app.post("/api/memory", (req, res) => {
+  const content = typeof req.body?.content === "string" ? req.body.content.trim() : "";
+  const role = req.body?.role === "assistant" ? "assistant" : "user";
+  if (!content) return res.status(400).json({ error: "Mémoire vide." });
+  const item = memory.add(role, content, { source: "manual" });
+  res.json({ ok: true, item, count: memory.count() });
+});
+app.delete("/api/memory", (req, res) => { memory.clear(); res.json({ ok: true, count: 0 }); });
 
 app.post("/api/chat", async (req, res) => {
   try {
@@ -69,11 +112,15 @@ app.post("/api/chat", async (req, res) => {
     if (!messages.length && typeof req.body?.message === "string" && req.body.message.trim()) messages = [{ role: "user", content: req.body.message.trim() }];
     if (!messages.length) return res.status(400).json({ error: "Aucun message valide n'a été reçu." });
     const lastUser = [...messages].reverse().find(m => m.role === "user");
-    const state = causal.step(lastUser?.content || "", "chat", messages);
-    const response = await ai.models.generateContent({ model: TEXT_MODEL, contents: toGemini(messages), config: { systemInstruction: WIENER_INSTRUCTIONS + causalContext(state), temperature: 0.45, maxOutputTokens: 4096 } });
-    const answer = extractText(response);
+    const query = lastUser?.content || "";
+    const state = causal.step(query, "chat", messages);
+    const context = memoryContext(query);
+    const result = await generateContent({ contents: toGemini(messages), config: { systemInstruction: WIENER_INSTRUCTIONS + causalContext(state) + context, temperature: 0.45, maxOutputTokens: 4096 } });
+    const answer = extractText(result.response);
     if (!answer) return res.status(500).json({ error: "Wiener IA n'a retourné aucune réponse." });
-    res.json({ answer, model: TEXT_MODEL, causal: { D: state.D, F: state.F, S: state.S } });
+    memory.add("user", query, { mode: "chat" });
+    memory.add("assistant", answer, { mode: "chat", model: result.model });
+    res.json({ answer, model: result.model, memoryCount: memory.count(), memoryUsed: Boolean(context), causal: { K: state.K, D: state.D, F: state.F, S: state.S } });
   } catch (e) { sendError(res, e); }
 });
 
@@ -85,10 +132,10 @@ app.post("/api/exercises", async (req, res) => {
     const level = typeof req.body?.level === "string" ? req.body.level.trim() : "non précisé";
     const subject = typeof req.body?.subject === "string" ? req.body.subject.trim() : "non précisée";
     const state = causal.step(question, "exercise", []);
-    const response = await ai.models.generateContent({ model: TEXT_MODEL, contents: [{ role: "user", parts: [{ text: `Niveau: ${level}\nMatière: ${subject}\n\nExercice:\n${question}` }] }], config: { systemInstruction: EXERCISE_INSTRUCTIONS + causalContext(state), temperature: 0.2, maxOutputTokens: 4096 } });
-    const answer = extractText(response);
+    const result = await generateContent({ contents: [{ role: "user", parts: [{ text: `Niveau: ${level}\nMatière: ${subject}\n\nExercice:\n${question}` }] }], config: { systemInstruction: EXERCISE_INSTRUCTIONS + causalContext(state), temperature: 0.2, maxOutputTokens: 4096 } });
+    const answer = extractText(result.response);
     if (!answer) return res.status(500).json({ error: "Aucune solution n'a été retournée." });
-    res.json({ answer, model: TEXT_MODEL, causal: { D: state.D, F: state.F } });
+    res.json({ answer, model: result.model, causal: { D: state.D, F: state.F } });
   } catch (e) { sendError(res, e); }
 });
 
@@ -111,11 +158,11 @@ app.post("/api/search", async (req, res) => {
     const query = typeof req.body?.query === "string" ? req.body.query.trim() : "";
     if (!query) return res.status(400).json({ error: "Recherche vide." });
     const state = causal.step(query, "search", []);
-    const response = await ai.models.generateContent({ model: TEXT_MODEL, contents: query, config: { systemInstruction: WIENER_INSTRUCTIONS + causalContext(state), tools: [{ googleSearch: {} }], temperature: 0.2, maxOutputTokens: 4096 } });
-    const answer = extractText(response);
+    const result = await generateContent({ contents: query, config: { systemInstruction: WIENER_INSTRUCTIONS + causalContext(state), tools: [{ googleSearch: {} }], temperature: 0.2, maxOutputTokens: 4096 } });
+    const answer = extractText(result.response);
     if (!answer) return res.status(500).json({ error: "Aucun résultat de recherche." });
-    const groundingMetadata = response?.candidates?.[0]?.groundingMetadata || null;
-    res.json({ answer, response: answer, model: TEXT_MODEL, search: true, groundingMetadata, causal: { D: state.D, F: state.F } });
+    const groundingMetadata = result.response?.candidates?.[0]?.groundingMetadata || null;
+    res.json({ answer, response: answer, model: result.model, search: true, groundingMetadata, causal: { D: state.D, F: state.F } });
   } catch (e) { sendError(res, e); }
 });
 
@@ -125,8 +172,8 @@ app.post("/api/consciousness", async (req, res) => {
     const text = typeof req.body?.text === "string" ? req.body.text.trim() : "";
     if (!text) return res.status(400).json({ error: "Texte manquant." });
     const state = causal.step(text, "analysis", []);
-    const response = await ai.models.generateContent({ model: TEXT_MODEL, contents: text, config: { systemInstruction: ANALYSIS_INSTRUCTIONS + causalContext(state), temperature: 0.2, maxOutputTokens: 2048 } });
-    res.json({ analysis: extractText(response), functional: true, causal: { K: state.K, D: state.D, F: state.F, S: state.S } });
+    const result = await generateContent({ contents: text, config: { systemInstruction: ANALYSIS_INSTRUCTIONS + causalContext(state), temperature: 0.2, maxOutputTokens: 2048 } });
+    res.json({ analysis: extractText(result.response), functional: true, model: result.model, causal: { K: state.K, D: state.D, F: state.F, S: state.S } });
   } catch (e) { sendError(res, e); }
 });
 
@@ -136,8 +183,9 @@ app.post("/api/analyze", async (req, res) => {
     const text = typeof req.body?.text === "string" ? req.body.text.trim() : "";
     if (!text) return res.status(400).json({ error: "Texte à analyser manquant." });
     const state = causal.step(text, "analysis", []);
-    const response = await ai.models.generateContent({ model: TEXT_MODEL, contents: text, config: { systemInstruction: ANALYSIS_INSTRUCTIONS + causalContext(state), temperature: 0.2, maxOutputTokens: 2048 } });
-    res.json({ answer: extractText(response), analysis: extractText(response), functional: true, causal: { K: state.K, D: state.D, F: state.F, S: state.S } });
+    const result = await generateContent({ contents: text, config: { systemInstruction: ANALYSIS_INSTRUCTIONS + causalContext(state), temperature: 0.2, maxOutputTokens: 2048 } });
+    const analysis = extractText(result.response);
+    res.json({ answer: analysis, analysis, functional: true, model: result.model, causal: { K: state.K, D: state.D, F: state.F, S: state.S } });
   } catch (e) { sendError(res, e); }
 });
 
