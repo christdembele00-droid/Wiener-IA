@@ -29,16 +29,8 @@
 <div id="wienerSplash" aria-hidden="true"><div class="splash-inner"><div class="splash-logo">W</div><div class="splash-name">Wiener IA</div></div></div>
 <div class="app">
   <aside class="sidebar" id="sidebar">
-    <div class="logo-box">
-      <div class="logo-circle">W</div>
-      <div class="logo-text">
-        <h1>Wiener IA</h1>
-        <p>Créée par Dembele Christ</p>
-      </div>
-    </div>
-
+    <div class="logo-box"><div class="logo-circle">W</div><div class="logo-text"><h1>Wiener IA</h1><p>Créée par Dembele Christ</p></div></div>
     <button class="new-chat-btn" id="newChatBtn" type="button"><span>＋</span> Nouvelle conversation</button>
-
     <nav class="menu">
       <button class="menu-item active" data-mode="chat" type="button"><span class="menu-icon">💬</span><span>Chat IA</span></button>
       <button class="menu-item" data-mode="exercise" type="button"><span class="menu-icon">📚</span><span>Exercices</span></button>
@@ -47,112 +39,36 @@
       <button class="menu-item" data-mode="pdf" type="button"><span class="menu-icon">📄</span><span>Analyse PDF</span></button>
       <button class="menu-item" data-mode="calculator" type="button"><span class="menu-icon">🧮</span><span>Calculatrice</span></button>
     </nav>
-
-    <div class="sidebar-footer">
-      <div>Wiener IA</div>
-      <small>Version 2.0</small>
-    </div>
+    <div class="sidebar-footer"><div>Wiener IA</div><small>Version 2.0</small></div>
   </aside>
-
   <main class="main">
-    <header class="topbar">
-      <div class="topbar-left">
-        <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Ouvrir le menu">☰</button>
-        <div class="title">Wiener IA</div>
-      </div>
-      <div class="status"><span class="status-dot"></span><span>En ligne</span></div>
-    </header>
-
-    <section class="chat-container" id="chatContainer">
-      <div id="messages" class="messages">
-        <div class="message assistant">
-          <div class="message-content">
-            👋 Bonjour !<br><br>
-            Je suis <strong>Wiener IA</strong>.<br><br>
-            Je peux vous aider avec vos questions, vos exercices, vos recherches, vos documents et bien plus encore.
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <div class="file-preview" id="filePreview" hidden>
-      <div class="file-info">
-        <span class="file-icon" id="fileIcon">📄</span>
-        <div>
-          <strong id="fileName">Aucun fichier</strong>
-          <small id="fileSize">0 KB</small>
-        </div>
-      </div>
-      <button type="button" id="removeFileBtn" class="remove-file-btn" aria-label="Supprimer le fichier">×</button>
-    </div>
-
-    <footer class="input-area">
-      <div class="input-container">
-        <input type="file" id="fileInput" accept=".pdf,image/png,image/jpeg,image/webp,application/pdf" hidden>
-        <button type="button" id="attachBtn" class="attach-btn" title="Ajouter un fichier" aria-label="Ajouter un fichier">📎</button>
-        <textarea id="userInput" placeholder="Envoyez un message à Wiener IA..." rows="1" maxlength="20000"></textarea>
-        <button id="sendBtn" type="button" class="send-btn"><span class="send-text">Envoyer</span><span class="send-icon">➤</span></button>
-      </div>
-      <div class="input-hint">Wiener IA peut parfois faire des erreurs. Vérifiez les informations importantes.</div>
-    </footer>
+    <header class="topbar"><div class="topbar-left"><button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Ouvrir le menu">☰</button><div class="title">Wiener IA</div></div><div class="status"><span class="status-dot"></span><span>En ligne</span></div></header>
+    <section class="chat-container" id="chatContainer"><div id="messages" class="messages"><div class="message assistant"><div class="message-content">👋 Bonjour !<br><br>Je suis <strong>Wiener IA</strong>.<br><br>Je peux vous aider avec vos questions, vos exercices, vos recherches, vos documents et bien plus encore.</div></div></div></section>
+    <div class="file-preview" id="filePreview" hidden><div class="file-info"><span class="file-icon" id="fileIcon">📄</span><div><strong id="fileName">Aucun fichier</strong><small id="fileSize">0 KB</small></div></div><button type="button" id="removeFileBtn" class="remove-file-btn" aria-label="Supprimer le fichier">×</button></div>
+    <footer class="input-area"><div class="input-container"><input type="file" id="fileInput" accept=".pdf,application/pdf,image/png,image/jpeg,image/webp" hidden><button type="button" id="attachBtn" class="attach-btn" title="Ajouter un fichier" aria-label="Ajouter un fichier">📎</button><textarea id="userInput" placeholder="Envoyez un message à Wiener IA..." rows="1" maxlength="20000"></textarea><button id="sendBtn" type="button" class="send-btn"><span class="send-text">Envoyer</span><span class="send-icon">➤</span></button></div><div class="input-hint">Wiener IA peut parfois faire des erreurs. Vérifiez les informations importantes.</div></footer>
   </main>
 </div>
-
 <script src="app.js"></script>
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const splash = document.getElementById("wienerSplash");
-  window.setTimeout(() => splash?.classList.add("is-hidden"), 4000);
-
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js", { scope: "./" }).catch(() => {});
-    });
-  }
-
-  const fileInput = document.getElementById("fileInput");
-  const attachBtn = document.getElementById("attachBtn");
-  const filePreview = document.getElementById("filePreview");
-  const fileName = document.getElementById("fileName");
-  const fileSize = document.getElementById("fileSize");
-  const fileIcon = document.getElementById("fileIcon");
-  const removeFileBtn = document.getElementById("removeFileBtn");
-  const userInput = document.getElementById("userInput");
-  const mobileMenuBtn = document.getElementById("mobileMenuBtn");
-  const sidebar = document.getElementById("sidebar");
-
-  window.wienerSelectedFile = null;
-
-  attachBtn?.addEventListener("click", () => fileInput?.click());
-  fileInput?.addEventListener("change", () => {
-    const file = fileInput.files?.[0];
-    if (!file) return;
-    window.wienerSelectedFile = file;
-    filePreview.hidden = false;
-    fileName.textContent = file.name;
-    fileSize.textContent = formatFileSize(file.size);
-    fileIcon.textContent = file.type === "application/pdf" ? "📄" : "🖼️";
-    userInput.placeholder = "Que voulez-vous savoir sur ce fichier ?";
-  });
-
-  removeFileBtn?.addEventListener("click", () => {
-    fileInput.value = "";
-    window.wienerSelectedFile = null;
-    filePreview.hidden = true;
-    fileName.textContent = "Aucun fichier";
-    fileSize.textContent = "0 KB";
-    fileIcon.textContent = "📄";
-    userInput.placeholder = "Envoyez un message à Wiener IA...";
-  });
-
-  mobileMenuBtn?.addEventListener("click", () => sidebar?.classList.toggle("mobile-open"));
-
-  function formatFileSize(bytes) {
-    if (bytes < 1024) return bytes + " octets";
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
-  }
-});
+(() => {
+  const init = () => {
+    const splash = document.getElementById("wienerSplash");
+    window.setTimeout(() => splash?.classList.add("is-hidden"), 4000);
+    if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js", {scope:"./"}).catch(err => console.warn("Service worker:", err)));
+    const fileInput=document.getElementById("fileInput"), attachBtn=document.getElementById("attachBtn"), filePreview=document.getElementById("filePreview"), fileName=document.getElementById("fileName"), fileSize=document.getElementById("fileSize"), fileIcon=document.getElementById("fileIcon"), removeFileBtn=document.getElementById("removeFileBtn"), userInput=document.getElementById("userInput"), mobileMenuBtn=document.getElementById("mobileMenuBtn"), sidebar=document.getElementById("sidebar");
+    window.wienerSelectedFile=null;
+    const openFilePicker=(event)=>{event?.preventDefault();if(!fileInput)return;try{if(typeof fileInput.showPicker==="function")fileInput.showPicker();else fileInput.click();}catch(_){fileInput.click();}};
+    attachBtn?.addEventListener("click",openFilePicker);
+    fileInput?.addEventListener("change",()=>{const file=fileInput.files&&fileInput.files[0];if(!file)return;const allowed=["application/pdf","image/png","image/jpeg","image/webp"];if(!allowed.includes(file.type)){fileInput.value="";window.wienerSelectedFile=null;addFileMessage("Type de fichier non pris en charge. Utilise un PDF, PNG, JPEG ou WebP.");return;}if(file.size>20*1024*1024){fileInput.value="";window.wienerSelectedFile=null;addFileMessage("Fichier trop volumineux. Taille maximale : 20 MB.");return;}window.wienerSelectedFile=file;if(filePreview)filePreview.hidden=false;if(fileName)fileName.textContent=file.name;if(fileSize)fileSize.textContent=formatFileSize(file.size);if(fileIcon)fileIcon.textContent=file.type==="application/pdf"?"📄":"🖼️";if(userInput)userInput.placeholder="Que voulez-vous savoir sur ce fichier ?";});
+    removeFileBtn?.addEventListener("click",removeSelectedFile);
+    mobileMenuBtn?.addEventListener("click",()=>sidebar?.classList.toggle("mobile-open"));
+    function removeSelectedFile(){if(fileInput)fileInput.value="";window.wienerSelectedFile=null;if(filePreview)filePreview.hidden=true;if(fileName)fileName.textContent="Aucun fichier";if(fileSize)fileSize.textContent="0 KB";if(fileIcon)fileIcon.textContent="📄";if(userInput)userInput.placeholder="Envoyez un message à Wiener IA...";}
+    window.removeWienerSelectedFile=removeSelectedFile;
+    function addFileMessage(text){const box=document.getElementById("messages");if(!box)return;const div=document.createElement("div");div.className="message assistant";div.textContent=text;box.appendChild(div);box.scrollTop=box.scrollHeight;}
+    function formatFileSize(bytes){if(bytes<1024)return bytes+" octets";if(bytes<1024*1024)return(bytes/1024).toFixed(1)+" KB";return(bytes/(1024*1024)).toFixed(1)+" MB";}
+  };
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
+})();
 </script>
 </body>
 </html>
