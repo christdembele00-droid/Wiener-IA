@@ -4,6 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const { GoogleGenAI } = require("@google/genai");
+const multer = require("multer");
 const { CausalEngine } = require("./causal_engine");
 const { MemoryStore } = require("./memory_store");
 
@@ -12,11 +13,14 @@ const PORT = Number(process.env.PORT) || 10000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || "gemini-3.6-flash";
 const FALLBACK_MODELS = [TEXT_MODEL, "gemini-2.5-flash", "gemini-3.7-flash", "gemini-3.8-flash"].filter((v, i, a) => v && a.indexOf(v) === i);
+const IMAGE_MODELS = [process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image", "gemini-2.5-flash-image"];
 const MAX_MESSAGES = 30;
 const MAX_MESSAGE_LENGTH = 20000;
+const MAX_FILE_SIZE = 20 * 1024 * 1024;
 const ai = GEMINI_API_KEY ? new GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
 const causal = new CausalEngine();
 const memory = new MemoryStore();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_FILE_SIZE } });
 
 app.disable("x-powered-by");
 app.use(cors({ origin: true, methods: ["GET", "POST", "DELETE", "OPTIONS"], allowedHeaders: ["Content-Type"] }));
@@ -50,15 +54,13 @@ function extractText(response) {
   return parts.filter(p => typeof p?.text === "string").map(p => p.text).join("\n").trim();
 }
 
-function errorStatus(error) {
-  return Number(error?.status) || Number(error?.statusCode) || Number(error?.response?.status) || 500;
-}
+function errorStatus(error) { return Number(error?.status) || Number(error?.statusCode) || Number(error?.response?.status) || 500; }
 
 function sendError(res, error) {
   console.error("Wiener IA error:", error);
   const status = errorStatus(error);
   if (status === 401 || status === 403) return res.status(status).json({ error: "La clé Gemini est invalide ou non autorisée." });
-  if (status === 404) return res.status(404).json({ error: "Aucun modèle Gemini disponible pour cette clé. Vérifie le projet Google AI utilisé par GEMINI_API_KEY." });
+  if (status === 404) return res.status(404).json({ error: "Le modèle demandé n'est pas disponible pour cette clé Gemini." });
   if (status === 429) return res.status(429).json({ error: "La limite Gemini a été atteinte. Réessaie plus tard." });
   return res.status(500).json({ error: error?.message || "Une erreur est survenue avec Gemini." });
 }
@@ -79,10 +81,32 @@ async function generateContent(options) {
   throw lastError || new Error("Aucun modèle Gemini disponible.");
 }
 
+async function generateImage(prompt) {
+  let lastError = null;
+  for (const model of [...new Set(IMAGE_MODELS)]) {
+    try {
+      const interaction = await ai.interactions.create({
+        model,
+        input: prompt,
+        response_format: { type: "image", mime_type: "image/png", aspect_ratio: "1:1", image_size: "1K" }
+      });
+      if (interaction?.output_image?.data) return { interaction, model, data: interaction.output_image.data };
+      const block = interaction?.steps?.flatMap(s => s?.type === "model_output" ? (s.content || []) : []).find(c => c?.type === "image" && c?.data);
+      if (block) return { interaction, model, data: block.data };
+      throw new Error("Le modèle image n'a fourni aucune image.");
+    } catch (error) {
+      lastError = error;
+      const status = errorStatus(error);
+      if (![400, 404].includes(status)) throw error;
+    }
+  }
+  throw lastError || new Error("Aucun modèle image Gemini disponible pour cette clé.");
+}
+
 function memoryContext(query) {
   const matches = memory.search(query, 6);
   if (!matches.length) return "";
-  return "\nMémoire pertinente de Wiener IA (utilise-la comme contexte, pas comme vérité absolue):\n" + matches.map(m => `- ${m.role}: ${m.content}`).join("\n");
+  return "\nMémoire pertinente de Wiener IA (contexte, pas vérité absolue):\n" + matches.map(m => `- ${m.role}: ${m.content}`).join("\n");
 }
 
 function causalContext(state) {
@@ -90,7 +114,7 @@ function causalContext(state) {
 }
 
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "index.html")));
-app.get("/api/health", (req, res) => res.status(200).json({ ok: true, service: "Wiener IA", geminiConfigured: Boolean(ai), textModel: TEXT_MODEL, availableModelCandidates: FALLBACK_MODELS, memoryCount: memory.count(), causalAudit: causal.audit(), time: new Date().toISOString() }));
+app.get("/api/health", (req, res) => res.status(200).json({ ok: true, service: "Wiener IA", geminiConfigured: Boolean(ai), textModel: TEXT_MODEL, availableModelCandidates: FALLBACK_MODELS, imageModels: IMAGE_MODELS, memoryCount: memory.count(), causalAudit: causal.audit(), time: new Date().toISOString() }));
 app.get("/health", (req, res) => res.status(200).json({ ok: true, service: "Wiener IA" }));
 app.get("/api/causal/state", (req, res) => res.json(causal.snapshot()));
 app.get("/api/causal/audit", (req, res) => res.json(causal.audit()));
@@ -166,6 +190,34 @@ app.post("/api/search", async (req, res) => {
   } catch (e) { sendError(res, e); }
 });
 
+app.post("/api/image", async (req, res) => {
+  try {
+    if (!requireGemini(res)) return;
+    const prompt = typeof req.body?.prompt === "string" ? req.body.prompt.trim() : "";
+    if (!prompt) return res.status(400).json({ error: "Décris l'image à générer." });
+    const state = causal.step(prompt, "image", []);
+    const result = await generateImage(prompt);
+    res.json({ ok: true, model: result.model, image: `data:image/png;base64,${result.data}`, causal: { D: state.D, F: state.F } });
+  } catch (e) { sendError(res, e); }
+});
+
+app.post("/api/analyze-file", upload.single("file"), async (req, res) => {
+  try {
+    if (!requireGemini(res)) return;
+    if (!req.file) return res.status(400).json({ error: "Aucun fichier reçu." });
+    const mime = req.file.mimetype || "application/octet-stream";
+    const allowed = ["application/pdf", "image/png", "image/jpeg", "image/webp"];
+    if (!allowed.includes(mime)) return res.status(415).json({ error: "Type de fichier non pris en charge." });
+    const prompt = typeof req.body?.prompt === "string" && req.body.prompt.trim() ? req.body.prompt.trim() : "Analyse ce fichier et réponds à la demande de l'utilisateur. Si c'est un PDF, prends en compte le texte, les tableaux, graphiques et éléments visuels.";
+    const state = causal.step(`${req.file.originalname}: ${prompt}`, "file", []);
+    const contents = [{ text: prompt }, { inlineData: { mimeType: mime, data: req.file.buffer.toString("base64") } }];
+    const result = await generateContent({ contents, config: { systemInstruction: WIENER_INSTRUCTIONS + causalContext(state), temperature: 0.2, maxOutputTokens: 4096 } });
+    const answer = extractText(result.response);
+    if (!answer) return res.status(500).json({ error: "Aucune analyse n'a été retournée." });
+    res.json({ answer, model: result.model, file: { name: req.file.originalname, mimeType: mime, size: req.file.size }, causal: { K: state.K, D: state.D, F: state.F, S: state.S } });
+  } catch (e) { sendError(res, e); }
+});
+
 app.post("/api/consciousness", async (req, res) => {
   try {
     if (!requireGemini(res)) return;
@@ -189,5 +241,10 @@ app.post("/api/analyze", async (req, res) => {
   } catch (e) { sendError(res, e); }
 });
 
+app.use((error, req, res, next) => {
+  if (error?.code === "LIMIT_FILE_SIZE") return res.status(413).json({ error: "Fichier trop volumineux. Taille maximale: 20 MB." });
+  console.error("Wiener IA middleware error:", error);
+  res.status(500).json({ error: "Erreur serveur inattendue." });
+});
 app.use((req, res) => res.status(404).json({ error: "Route introuvable." }));
 app.listen(PORT, "0.0.0.0", () => console.log(`Wiener IA démarré sur 0.0.0.0:${PORT}`));
