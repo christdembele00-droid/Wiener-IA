@@ -1,0 +1,42 @@
+/* Wiener IA — commandes discrètes et modernes */
+button{font:inherit;-webkit-tap-highlight-color:transparent}
+button:focus{outline:none}
+button:focus-visible{outline:2px solid #8FD3FF;outline-offset:2px}
+.new-chat-btn{background:#2a2a2a!important;border:1px solid #3a3a3a!important;border-radius:10px!important;font-weight:500!important;transition:background .15s,border-color .15s,transform .12s!important}
+.new-chat-btn:hover{background:#333!important;border-color:#4a4a4a!important}
+.new-chat-btn:active{transform:scale(.985)}
+.history-item{border-radius:8px!important;transition:background .15s,color .15s!important}
+.history-item:hover{background:#242424!important;color:#fff!important}
+.history-head button,.remove-file-btn,.wa-close{border-radius:7px!important;transition:background .15s,color .15s,transform .12s!important}
+.history-head button:hover,.remove-file-btn:hover,.wa-close:hover{background:#2a2a2a!important;color:#fff!important}
+.plus-btn{background:#2a2a2a!important;border:1px solid #3a3a3a!important;border-radius:14px!important;color:#ddd!important;transition:background .15s,border-color .15s,transform .12s!important}
+.plus-btn:hover{background:#333!important;border-color:#4a4a4a!important;color:#fff!important}
+.plus-btn:active{transform:scale(.95)}
+.plus-menu{border:1px solid #3a3a3a!important;border-radius:12px!important;background:#1b1b1b!important;box-shadow:0 12px 35px rgba(0,0,0,.4)!important;padding:5px!important}
+.plus-menu button{border-radius:8px!important;padding:9px 11px!important;background:transparent!important;transition:background .12s,color .12s!important}
+.plus-menu button:hover,.plus-menu button.active{background:#2b2b2b!important;color:#fff!important}
+.plus-menu button:active{background:#343434!important}
+#sendBtn{width:58px!important;height:58px!important;flex:0 0 58px!important;border-radius:14px!important;background:#8FD3FF!important;border:1px solid #8FD3FF!important;color:#111!important;font-size:0!important;display:flex!important;align-items:center!important;justify-content:center!important;transition:background .15s,border-color .15s,transform .12s,box-shadow .15s!important}
+#sendBtn:hover{background:#a9ddff!important;border-color:#a9ddff!important;box-shadow:0 2px 12px rgba(143,211,255,.16)!important}
+#sendBtn:active{transform:scale(.94);box-shadow:none!important}
+#sendBtn .send-text{display:none!important}
+#sendBtn .send-icon{font-size:20px!important;line-height:1!important;transform:translateX(1px)}
+#wienerAuthButton{border:1px solid #3a3a3a!important;background:transparent!important;color:#ddd!important;border-radius:9px!important;transition:background .15s,color .15s,border-color .15s,transform .12s!important}
+#wienerAuthButton:hover{background:#2a2a2a!important;color:#fff!important;border-color:#4a4a4a!important}
+#wienerAuthButton:active{transform:scale(.97)}
+.wa-tabs button{border-radius:8px!important;transition:background .15s,color .15s,transform .12s!important}
+.wa-tabs button.active{background:#8FD3FF!important;color:#111!important}
+.wa-primary{border-radius:9px!important;background:#8FD3FF!important;color:#111!important;transition:background .15s,transform .12s!important}
+.wa-primary:hover{background:#a9ddff!important}
+.wa-google{border-radius:9px!important;transition:background .15s,transform .12s!important}
+.wa-google:hover{background:#f1f1f1!important}
+.wa-primary:active,.wa-google:active{transform:scale(.985)}
+/* Actions des réponses : invisibles tant qu'on ne les sollicite pas */
+.wiener-message-actions{opacity:0!important;visibility:hidden!important;pointer-events:none!important;transform:translateY(-2px)!important;transition:opacity .16s ease,transform .16s ease,visibility .16s ease!important}
+.message.assistant:hover .wiener-message-actions,.message.assistant:focus-within .wiener-message-actions{opacity:1!important;visibility:visible!important;pointer-events:auto!important;transform:translateY(0)!important}
+.wiener-copy-btn{width:28px!important;height:28px!important;border:0!important;border-radius:7px!important;background:transparent!important;color:#8b8b8b!important;transition:background .15s,color .15s,transform .12s!important}
+.wiener-copy-btn:hover{background:#2a2a2a!important;color:#eee!important}
+.wiener-copy-btn:active{transform:scale(.92)}
+.wiener-copy-btn.is-copied{color:#8FD3FF!important}
+@media(hover:none){.message.assistant .wiener-message-actions{opacity:.72!important;visibility:visible!important;pointer-events:auto!important}}
+@media(max-width:900px){#sendBtn{width:54px!important;height:54px!important;flex-basis:54px!important}.plus-btn{width:54px!important;height:54px!important;flex-basis:54px!important}}
