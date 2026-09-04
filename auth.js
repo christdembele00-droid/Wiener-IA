@@ -1,0 +1,39 @@
+"use strict";
+const crypto=require("crypto");
+const bcrypt=require("bcryptjs");
+const jwt=require("jsonwebtoken");
+const {Pool}=require("pg");
+const {OAuth2Client}=require("google-auth-library");
+
+const FRONTEND_URL=process.env.FRONTEND_URL||"https://christdembele00-droid.github.io/Wiener-IA/";
+const AUTH_SECRET=process.env.AUTH_SECRET;
+const GOOGLE_CLIENT_ID=process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET=process.env.GOOGLE_CLIENT_SECRET;
+const DATABASE_URL=process.env.DATABASE_URL;
+const COOKIE_NAME="wiener_session";
+const isProduction=process.env.NODE_ENV==="production";
+const pool=DATABASE_URL?new Pool({connectionString:DATABASE_URL,ssl:isProduction?{rejectUnauthorized:false}:false,max:Number(process.env.DB_POOL_MAX)||20,idleTimeoutMillis:30000,connectionTimeoutMillis:5000}):null;
+const googleClient=GOOGLE_CLIENT_ID&&GOOGLE_CLIENT_SECRET?new OAuth2Client(GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET):null;
+function configured(){return Boolean(pool&&AUTH_SECRET);}
+function googleConfigured(){return Boolean(configured()&&googleClient);}
+function id(){return crypto.randomUUID();}
+async function initAuthDb(){if(!pool)return;await pool.query(`CREATE TABLE IF NOT EXISTS users (id UUID PRIMARY KEY,email TEXT UNIQUE NOT NULL,password_hash TEXT,name TEXT,avatar_url TEXT,google_sub TEXT UNIQUE,email_verified BOOLEAN NOT NULL DEFAULT FALSE,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()); CREATE INDEX IF NOT EXISTS users_email_idx ON users(email); CREATE INDEX IF NOT EXISTS users_google_sub_idx ON users(google_sub);`);}
+function signUser(user){return jwt.sign({sub:user.id,email:user.email,name:user.name||null},AUTH_SECRET,{expiresIn:"30d",issuer:"wiener-ia"});}
+function setSession(res,user){res.cookie(COOKIE_NAME,signUser(user),{httpOnly:true,secure:true,sameSite:"none",path:"/",maxAge:30*24*60*60*1000});}
+function clearSession(res){res.clearCookie(COOKIE_NAME,{httpOnly:true,secure:true,sameSite:"none",path:"/"});}
+function publicUser(user){return user?{id:user.id,email:user.email,name:user.name||null,avatarUrl:user.avatar_url||null,emailVerified:Boolean(user.email_verified)}:null;}
+function getToken(req){const value=req.headers.authorization?.startsWith("Bearer ")?req.headers.authorization.slice(7):req.cookies?.[COOKIE_NAME];return value||null;}
+function authMiddleware(req,res,next){if(!configured())return res.status(503).json({error:"Authentification non configurée. Ajoute DATABASE_URL et AUTH_SECRET sur le serveur."});try{const token=getToken(req);if(!token) return res.status(401).json({error:"Connexion requise."});req.auth=jwt.verify(token,AUTH_SECRET,{issuer:"wiener-ia"});next();}catch{return res.status(401).json({error:"Session invalide ou expirée."});}}
+async function getUser(userId){const result=await pool.query("SELECT id,email,name,avatar_url,email_verified FROM users WHERE id=$1 LIMIT 1",[userId]);return result.rows[0]||null;}
+function normalizeEmail(email){return String(email||"").trim().toLowerCase();}
+function validatePassword(password){return typeof password==="string"&&password.length>=8&&password.length<=128;}
+function authRoutes(app){
+  app.get("/api/auth/config",(req,res)=>res.json({ok:true,enabled:configured(),googleEnabled:googleConfigured()}));
+  app.get("/api/auth/me",authMiddleware,async(req,res)=>{try{const user=await getUser(req.auth.sub);if(!user)return res.status(401).json({error:"Compte introuvable."});res.json({ok:true,user:publicUser(user)});}catch(error){console.error("Auth me:",error);res.status(500).json({error:"Impossible de récupérer le compte."});}});
+  app.post("/api/auth/register",async(req,res)=>{if(!configured())return res.status(503).json({error:"Authentification non configurée sur le serveur."});try{const email=normalizeEmail(req.body?.email),password=req.body?.password,name=String(req.body?.name||"").trim().slice(0,100);if(!/^\S+@\S+\.\S+$/.test(email))return res.status(400).json({error:"Adresse e-mail invalide."});if(!validatePassword(password))return res.status(400).json({error:"Le mot de passe doit contenir au moins 8 caractères."});const existing=await pool.query("SELECT id,google_sub,password_hash FROM users WHERE email=$1 LIMIT 1",[email]);if(existing.rows[0]?.password_hash)return res.status(409).json({error:"Un compte existe déjà avec cet e-mail."});const hash=await bcrypt.hash(password,12);let user;if(existing.rows[0]){const result=await pool.query("UPDATE users SET password_hash=$1,name=COALESCE(NULLIF($2,''),name),updated_at=NOW() WHERE id=$3 RETURNING id,email,name,avatar_url,email_verified",[hash,name,existing.rows[0].id]);user=result.rows[0];}else{const result=await pool.query("INSERT INTO users(id,email,password_hash,name,email_verified) VALUES($1,$2,$3,$4,FALSE) RETURNING id,email,name,avatar_url,email_verified",[id(),email,hash,name]);user=result.rows[0];}setSession(res,user);res.status(201).json({ok:true,user:publicUser(user)});}catch(error){console.error("Auth register:",error);res.status(500).json({error:"Impossible de créer le compte."});}});
+  app.post("/api/auth/login",async(req,res)=>{if(!configured())return res.status(503).json({error:"Authentification non configurée sur le serveur."});try{const email=normalizeEmail(req.body?.email),password=req.body?.password;const result=await pool.query("SELECT * FROM users WHERE email=$1 LIMIT 1",[email]);const user=result.rows[0];if(!user||!user.password_hash||!(await bcrypt.compare(String(password||""),user.password_hash)))return res.status(401).json({error:"E-mail ou mot de passe incorrect."});setSession(res,user);res.json({ok:true,user:publicUser(user)});}catch(error){console.error("Auth login:",error);res.status(500).json({error:"Impossible de se connecter."});}});
+  app.post("/api/auth/logout",(req,res)=>{clearSession(res);res.json({ok:true});});
+  app.get("/api/auth/google",(req,res)=>{if(!googleConfigured())return res.status(503).send("Google OAuth n'est pas configuré.");const redirect=googleClient.generateAuthUrl({access_type:"online",scope:["openid","email","profile"],prompt:"select_account",redirect_uri:FRONTEND_URL.replace(/\/$/,"")+"/auth/callback"});res.redirect(redirect);});
+  app.post("/api/auth/google/exchange",async(req,res)=>{if(!googleConfigured())return res.status(503).json({error:"Google OAuth n'est pas configuré sur le serveur."});try{const code=String(req.body?.code||"").trim();if(!code)return res.status(400).json({error:"Code Google manquant."});const redirectUri=FRONTEND_URL.replace(/\/$/,"")+"/auth/callback";const {tokens}=await googleClient.getToken({code,redirect_uri:redirectUri});if(!tokens.id_token)return res.status(401).json({error:"Google n'a pas fourni de jeton d'identité."});const ticket=await googleClient.verifyIdToken({idToken:tokens.id_token,audience:GOOGLE_CLIENT_ID});const payload=ticket.getPayload();if(!payload?.sub||!payload?.email)return res.status(401).json({error:"Compte Google incomplet."});const email=normalizeEmail(payload.email);const existing=await pool.query("SELECT * FROM users WHERE google_sub=$1 OR email=$2 LIMIT 1",[payload.sub,email]);let user=existing.rows[0];if(user){const result=await pool.query("UPDATE users SET google_sub=$1,name=COALESCE($2,name),avatar_url=COALESCE($3,avatar_url),email_verified=TRUE,updated_at=NOW() WHERE id=$4 RETURNING id,email,name,avatar_url,email_verified",[payload.sub,payload.name||null,payload.picture||null,user.id]);user=result.rows[0];}else{const result=await pool.query("INSERT INTO users(id,email,name,avatar_url,google_sub,email_verified) VALUES($1,$2,$3,$4,$5,TRUE) RETURNING id,email,name,avatar_url,email_verified",[id(),email,payload.name||null,payload.picture||null,payload.sub]);user=result.rows[0];}setSession(res,user);res.json({ok:true,user:publicUser(user)});}catch(error){console.error("Google OAuth:",error);res.status(401).json({error:"Connexion Google impossible."});}});
+}
+module.exports={authRoutes,authMiddleware,initAuthDb,pool,configured};
