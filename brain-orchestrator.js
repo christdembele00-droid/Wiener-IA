@@ -1,5 +1,7 @@
 "use strict";
 
+const REFLECTION_MAX_MS = 2000;
+
 function normalize(text) {
   return String(text || "").replace(/\s+/g, " ").trim();
 }
@@ -58,9 +60,24 @@ function buildPlan(query, state) {
   return [...new Set(steps)];
 }
 
+function reflect(query) {
+  const startedAt = Date.now();
+  const state = classify(query);
+  const plan = buildPlan(query, state);
+  const elapsedMs = Date.now() - startedAt;
+  return {
+    state,
+    plan,
+    elapsedMs,
+    budgetMs: REFLECTION_MAX_MS,
+    withinBudget: elapsedMs <= REFLECTION_MAX_MS,
+    mode: "fast-reflection"
+  };
+}
+
 function buildInstruction(query, state, context = "") {
   const plan = buildPlan(query, state);
-  return `\nORCHESTRATION WIENER IA:\n- Type: ${state.task}\n- Outils candidats: ${state.tools.join(", ")}\n- Recherche Web: ${state.search ? "requise" : "non requise a priori"}\n- Vérification: ${state.verify ? "requise" : "proportionnelle au risque"}\n- Ambiguïté détectée: ${state.ambiguity ? "oui" : "non"}\n- Confiance initiale: ${state.confidence}\n- Profondeur: ${state.depth}\n- Plan: ${plan.map((x, i) => `${i + 1}. ${x}`).join("; ")}\n- Règles: distingue faits, contexte, déductions et incertitudes. Utilise les outils réellement disponibles. N'invente ni source, ni résultat d'outil, ni action réalisée. Si une information manque, signale-la plutôt que de la fabriquer.\n${context}`;
+  return `\nORCHESTRATION WIENER IA:\n- Mode: réflexion rapide, budget interne maximal ${REFLECTION_MAX_MS} ms\n- Type: ${state.task}\n- Outils candidats: ${state.tools.join(", ")}\n- Recherche Web: ${state.search ? "requise" : "non requise a priori"}\n- Vérification: ${state.verify ? "requise" : "proportionnelle au risque"}\n- Ambiguïté détectée: ${state.ambiguity ? "oui" : "non"}\n- Confiance initiale: ${state.confidence}\n- Profondeur: ${state.depth}\n- Plan: ${plan.map((x, i) => `${i + 1}. ${x}`).join("; ")}\n- Règles de vitesse: ne fais pas de réflexion inutile ou répétitive; pour une demande simple, réponds immédiatement après le contrôle minimal nécessaire; n'allonge pas la réponse pour simuler une réflexion.\n- Règles: distingue faits, contexte, déductions et incertitudes. Utilise les outils réellement disponibles. N'invente ni source, ni résultat d'outil, ni action réalisée. Si une information manque, signale-la plutôt que de la fabriquer.\n${context}`;
 }
 
 function verifyResponse(answer, state = {}) {
@@ -75,4 +92,4 @@ function verifyResponse(answer, state = {}) {
   return { ok: issues.length === 0, issues, checkedAt: new Date().toISOString() };
 }
 
-module.exports = { normalize, classify, buildPlan, buildInstruction, verifyResponse };
+module.exports = { normalize, classify, buildPlan, reflect, buildInstruction, verifyResponse, REFLECTION_MAX_MS };
