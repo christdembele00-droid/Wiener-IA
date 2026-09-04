@@ -15,28 +15,52 @@
   function addCopyButtons() {
     if (!messages || messages.dataset.copyReady === "1") return;
     messages.dataset.copyReady = "1";
-    const observer = new MutationObserver(() => {
-      messages.querySelectorAll(".message.assistant:not([data-copy-ready])").forEach(message => {
-        message.dataset.copyReady = "1";
-        const body = message.querySelector(".message-content");
-        if (!body || message.querySelector(".wiener-copy-btn")) return;
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "wiener-copy-btn";
-        button.textContent = "Copier";
-        button.title = "Copier la réponse";
-        button.addEventListener("click", async () => {
-          try {
-            await navigator.clipboard.writeText(body.innerText || body.textContent || "");
-            button.textContent = "Copié ✓";
-            setTimeout(() => { button.textContent = "Copier"; }, 1200);
-          } catch (_) {
-            button.textContent = "Copie impossible";
-            setTimeout(() => { button.textContent = "Copier"; }, 1200);
-          }
-        });
-        message.appendChild(button);
+
+    const addToMessage = message => {
+      if (!message || !message.classList.contains("assistant") || message.dataset.copyReady === "1") return;
+      const body = message.querySelector(".message-content");
+      if (!body || message.querySelector(".wiener-message-actions")) return;
+
+      message.dataset.copyReady = "1";
+      const actions = document.createElement("div");
+      actions.className = "wiener-message-actions";
+      actions.setAttribute("aria-label", "Actions de la réponse");
+
+      const copy = document.createElement("button");
+      copy.type = "button";
+      copy.className = "wiener-copy-btn";
+      copy.title = "Copier";
+      copy.setAttribute("aria-label", "Copier la réponse");
+      copy.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 9h10v10H9z"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+
+      copy.addEventListener("click", async event => {
+        event.stopPropagation();
+        const text = body.innerText || body.textContent || "";
+        try {
+          await navigator.clipboard.writeText(text);
+          copy.title = "Copié";
+          copy.setAttribute("aria-label", "Réponse copiée");
+          copy.classList.add("is-copied");
+          copy.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>';
+          window.setTimeout(() => {
+            copy.title = "Copier";
+            copy.setAttribute("aria-label", "Copier la réponse");
+            copy.classList.remove("is-copied");
+            copy.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 9h10v10H9z"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+          }, 1400);
+        } catch (_) {
+          copy.title = "Copie impossible";
+          window.setTimeout(() => { copy.title = "Copier"; }, 1400);
+        }
       });
+
+      actions.appendChild(copy);
+      message.appendChild(actions);
+    };
+
+    messages.querySelectorAll(".message.assistant").forEach(addToMessage);
+    const observer = new MutationObserver(() => {
+      messages.querySelectorAll(".message.assistant").forEach(addToMessage);
     });
     observer.observe(messages, { childList: true, subtree: true });
   }
