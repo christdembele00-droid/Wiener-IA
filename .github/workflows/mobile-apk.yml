@@ -13,6 +13,8 @@ jobs:
     defaults:
       run:
         working-directory: mobile
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -22,14 +24,37 @@ jobs:
         with:
           node-version: 24
 
-      - name: Setup Expo and EAS
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Install Expo and EAS CLI
+        run: npm install --global eas-cli@latest
+
+      - name: Validate and normalize EXPO_TOKEN
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${EXPO_TOKEN:-}" ]; then
+            echo "EXPO_TOKEN is missing from GitHub Actions secrets."
+            exit 1
+          fi
+          CLEAN_TOKEN="$(printf '%s' "$EXPO_TOKEN" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+          if [ -z "$CLEAN_TOKEN" ]; then
+            echo "EXPO_TOKEN is empty after normalization."
+            exit 1
+          fi
+          if [[ "$CLEAN_TOKEN" == *$'\r'* || "$CLEAN_TOKEN" == *$'\n'* ]]; then
+            echo "EXPO_TOKEN still contains an invalid line break."
+            exit 1
+          fi
+          echo "EXPO_TOKEN is present and normalized."
+          echo "EXPO_TOKEN=$CLEAN_TOKEN" >> "$GITHUB_ENV"
+
+      - name: Verify EAS authentication
+        run: eas whoami
 
       - name: Install dependencies
         run: npm install
+
+      - name: Validate Expo project
+        run: npx expo config --type public
 
       - name: Build Android APK
         run: eas build --platform android --profile preview --non-interactive --no-wait
