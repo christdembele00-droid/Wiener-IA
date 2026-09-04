@@ -4,19 +4,15 @@
   "description": "Wiener IA - Intelligence artificielle créée par Dembele Christ",
   "main": "server.js",
   "scripts": {
-    "start": "node -r ./auth-preload.js -r ./context-preload.js -r ./brain-preload.js server.js"
+    "start": "node server.js"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
     "@google/genai": "^2.21.0",
-    "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "express": "^5.1.0",
-    "google-auth-library": "^10.4.0",
-    "jsonwebtoken": "^9.0.2",
-    "multer": "^2.0.2",
-    "pg": "^8.16.3"
+    "multer": "^2.0.2"
   }
 }
