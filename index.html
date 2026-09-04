@@ -1,2 +1,78 @@
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="ui-polish.css">
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="google-site-verification" content="OJQn2i-K_zf5V3ZprWmKkOiPJHET7b2FCJOt5jshvdQ">
+  <meta name="description" content="Wiener IA - Intelligence artificielle moderne créée par Dembele Christ. Chat IA, exercices, recherche Web, analyse de documents et génération d’images.">
+  <meta name="keywords" content="Wiener IA, intelligence artificielle, IA, assistant IA, Dembele Christ, exercices, recherche Web, analyse PDF, génération d’images">
+  <meta name="author" content="Dembele Christ">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="theme-color" content="#000000">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="canonical" href="https://christdembele00-droid.github.io/Wiener-IA/">
+  <link rel="alternate" hreflang="fr" href="https://christdembele00-droid.github.io/Wiener-IA/">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Wiener IA">
+  <meta property="og:title" content="Wiener IA - Intelligence artificielle">
+  <meta property="og:description" content="Wiener IA, une intelligence artificielle moderne créée par Dembele Christ.">
+  <meta property="og:url" content="https://christdembele00-droid.github.io/Wiener-IA/">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Wiener IA - Intelligence artificielle | Dembele Christ">
+  <meta name="twitter:description" content="Wiener IA, une intelligence artificielle moderne créée par Dembele Christ.">
+  <title>Wiener IA - Intelligence artificielle | Dembele Christ</title>
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"WebApplication","name":"Wiener IA","url":"https://christdembele00-droid.github.io/Wiener-IA/","description":"Wiener IA est une intelligence artificielle moderne créée par Dembele Christ, avec chat IA, exercices, recherche Web, analyse de documents et génération d’images.","applicationCategory":"AIApplication","operatingSystem":"Web","inLanguage":"fr","creator":{"@type":"Person","name":"Dembele Christ"}}
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="ui-polish.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="logo-box"><div class="logo-circle">W</div><div class="logo-text"><h1>Wiener IA</h1><p>Créée par Dembele Christ</p></div></div>
+    <button class="new-chat-btn" id="newChatBtn" type="button"><span>＋</span> Nouvelle conversation</button>
+    <div class="history-head"><span>Historique</span><button id="clearHistoryBtn" type="button" title="Effacer l'historique" aria-label="Effacer l'historique">×</button></div>
+    <nav class="history-list" id="historyList" aria-label="Historique des conversations"></nav>
+    <div class="sidebar-footer"><div>Wiener IA</div><small>Version 2.0</small></div>
+  </aside>
+  <main class="main">
+    <header class="topbar"><div class="topbar-left"><button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Ouvrir le menu">☰</button><div class="title">Wiener IA</div></div><div class="status"><span class="status-dot"></span><span>En ligne</span></div></header>
+    <section class="chat-container" id="chatContainer"><div id="messages" class="messages"><div class="message assistant"><div class="message-content">👋 Bonjour !<br><br>Je suis <strong>Wiener IA</strong>.<br><br>Je peux vous aider avec vos questions, vos exercices, vos recherches, vos documents et bien plus encore.</div></div></div></section>
+    <div class="file-preview" id="filePreview" hidden><div class="file-info"><span class="file-icon" id="fileIcon">📄</span><div><strong id="fileName">Aucun fichier</strong><small id="fileSize">0 KB</small></div></div><button type="button" id="removeFileBtn" class="remove-file-btn" aria-label="Supprimer le fichier">×</button></div>
+    <footer class="input-area"><div class="input-container"><button type="button" id="plusBtn" class="plus-btn" title="Outils et modes" aria-label="Outils et modes">＋</button><div class="plus-menu" id="plusMenu" hidden><button type="button" data-mode="chat">Chat IA</button><button type="button" data-mode="exercise">Exercices</button><button type="button" data-mode="search">Recherche Web</button><button type="button" data-mode="image">Génération d'images</button><button type="button" data-mode="pdf">Analyse PDF</button><button type="button" data-mode="calculator">Calculatrice</button><button type="button" id="plusFileBtn">Ajouter un fichier</button></div><input type="file" id="fileInput" accept=".pdf,application/pdf,image/png,image/jpeg,image/webp" hidden><textarea id="userInput" placeholder="Envoyez un message à Wiener IA..." rows="1" maxlength="20000"></textarea><button id="voiceBtn" type="button" class="voice-btn" title="Parler à Wiener IA" aria-label="Activer la saisie vocale"><span aria-hidden="true">🎙</span></button><button id="sendBtn" type="button" class="send-btn"><span class="send-text">Envoyer</span><span class="send-icon">➤</span></button></div></footer>
+  </main>
+</div>
+<script src="app.js"></script>
+<script src="auth-ui.js"></script>
+<script>
+(() => {
+  const init = () => {
+    if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js", {scope:"./"}).catch(err => console.warn("Service worker:", err)));
+    const fileInput=document.getElementById("fileInput"), plusBtn=document.getElementById("plusBtn"), plusMenu=document.getElementById("plusMenu"), plusFileBtn=document.getElementById("plusFileBtn"), filePreview=document.getElementById("filePreview"), fileName=document.getElementById("fileName"), fileSize=document.getElementById("fileSize"), fileIcon=document.getElementById("fileIcon"), removeFileBtn=document.getElementById("removeFileBtn"), userInput=document.getElementById("userInput"), mobileMenuBtn=document.getElementById("mobileMenuBtn"), sidebar=document.getElementById("sidebar"), voiceBtn=document.getElementById("voiceBtn");
+    window.wienerSelectedFile=null;
+    const openFilePicker=(event)=>{event?.preventDefault();if(!fileInput)return;try{if(typeof fileInput.showPicker==="function")fileInput.showPicker();else fileInput.click();}catch(_){fileInput.click();}};
+    plusBtn?.addEventListener("click",e=>{e.stopPropagation();if(plusMenu)plusMenu.hidden=!plusMenu.hidden;});
+    plusFileBtn?.addEventListener("click",openFilePicker);
+    document.addEventListener("click",e=>{if(plusMenu&&!plusMenu.hidden&&!plusMenu.contains(e.target)&&e.target!==plusBtn)plusMenu.hidden=true;});
+    fileInput?.addEventListener("change",()=>{const file=fileInput.files&&fileInput.files[0];if(!file)return;const allowed=["application/pdf","image/png","image/jpeg","image/webp"];if(!allowed.includes(file.type)){fileInput.value="";window.wienerSelectedFile=null;addFileMessage("Type de fichier non pris en charge. Utilise un PDF, PNG, JPEG ou WebP.");return;}if(file.size>20*1024*1024){fileInput.value="";window.wienerSelectedFile=null;addFileMessage("Fichier trop volumineux. Taille maximale : 20 MB.");return;}window.wienerSelectedFile=file;if(filePreview)filePreview.hidden=false;if(fileName)fileName.textContent=file.name;if(fileSize)fileSize.textContent=formatFileSize(file.size);if(fileIcon)fileIcon.textContent=file.type==="application/pdf"?"📄":"🖼️";if(userInput)userInput.placeholder="Que voulez-vous savoir sur ce fichier ?";if(plusMenu)plusMenu.hidden=true;});
+    removeFileBtn?.addEventListener("click",removeSelectedFile);
+    mobileMenuBtn?.addEventListener("click",()=>sidebar?.classList.toggle("mobile-open"));
+    function removeSelectedFile(){if(fileInput)fileInput.value="";window.wienerSelectedFile=null;if(filePreview)filePreview.hidden=true;if(fileName)fileName.textContent="Aucun fichier";if(fileSize)fileSize.textContent="0 KB";if(fileIcon)fileIcon.textContent="📄";if(userInput)userInput.placeholder="Envoyez un message à Wiener IA...";}
+    window.removeWienerSelectedFile=removeSelectedFile;
+    function addFileMessage(text){const box=document.getElementById("messages");if(!box)return;const div=document.createElement("div");div.className="message assistant";div.textContent=text;box.appendChild(div);box.scrollTop=box.scrollHeight;}
+    function formatFileSize(bytes){if(bytes<1024)return bytes+" octets";if(bytes<1024*1024)return(bytes/1024).toFixed(1)+" KB";return(bytes/(1024*1024)).toFixed(1)+" MB";}
+    const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(voiceBtn){if(!SpeechRecognition){voiceBtn.title="La saisie vocale n'est pas disponible dans ce navigateur";voiceBtn.setAttribute("aria-label",voiceBtn.title);voiceBtn.disabled=true;}else{const recognition=new SpeechRecognition();recognition.lang="fr-FR";recognition.interimResults=true;recognition.continuous=false;recognition.maxAlternatives=1;recognition.onstart=()=>{voiceBtn.classList.add("recording");voiceBtn.setAttribute("aria-label","Arrêter la saisie vocale");voiceBtn.title="Arrêter la saisie vocale";};recognition.onend=()=>{voiceBtn.classList.remove("recording");voiceBtn.setAttribute("aria-label","Activer la saisie vocale");voiceBtn.title="Parler à Wiener IA";};recognition.onerror=event=>{console.warn("Saisie vocale:",event.error);recognition.stop();};recognition.onresult=event=>{let transcript="";for(let i=event.resultIndex;i<event.results.length;i++)transcript+=event.results[i][0].transcript;userInput.value=transcript;userInput.dispatchEvent(new Event("input",{bubbles:true}));userInput.focus();};voiceBtn.addEventListener("click",()=>{try{if(voiceBtn.classList.contains("recording"))recognition.stop();else recognition.start();}catch(_){}});}}
+  };
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
+})();
+</script>
+</body>
+</html>
