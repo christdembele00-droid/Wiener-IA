@@ -7,10 +7,10 @@ const capabilities = require("./brain-capabilities");
 const fs = require("fs");
 const path = require("path");
 
-const BRAIN_VERSION = "2.0.0";
+const BRAIN_VERSION = "2.1.0";
 const DATA_DIR = path.join(__dirname, "data");
 const CONVERSATIONS_FILE = path.join(DATA_DIR, "conversations.json");
-const SELF_CHECK = `\nMODELE COGNITIF WIENER IA:\nAvant de répondre, effectue silencieusement une boucle: comprendre l'intention → vérifier le contexte → choisir les outils pertinents → contrôler les hypothèses → répondre → contrôler la cohérence. Si une information est incertaine, récente ou susceptible d'avoir changé, utilise une source réellement disponible plutôt que de la deviner. Distingue faits, déductions et incertitudes. Ne prétends jamais avoir exécuté une action ou vérifié une source si ce n'est pas réellement le cas. Cette capacité est une auto-surveillance fonctionnelle, pas une conscience biologique ou une expérience subjective.`;
+const SELF_CHECK = `\nMODELE COGNITIF WIENER IA:\nAvant de répondre, effectue silencieusement une boucle rapide: comprendre l'intention → vérifier le contexte → choisir les outils pertinents → contrôler les hypothèses → répondre → contrôler la cohérence. Cette préparation interne est limitée à 2 secondes maximum et doit rester proportionnée à la difficulté: demande simple = contrôle minimal et réponse immédiate; demande complexe = utiliser le temps disponible efficacement. Si une information est incertaine, récente ou susceptible d'avoir changé, utilise une source réellement disponible plutôt que de la deviner. Distingue faits, déductions et incertitudes. Ne prétends jamais avoir exécuté une action ou vérifié une source si ce n'est pas réellement le cas. Cette capacité est une auto-surveillance fonctionnelle, pas une conscience biologique ou une expérience subjective.`;
 
 function textFromContents(contents) {
   if (typeof contents === "string") return contents;
@@ -47,11 +47,11 @@ function installGoogleBrain() {
       const original = this.models.generateContent.bind(this.models);
       this.models.generateContent = async options => {
         const query = textFromContents(options?.contents);
-        const state = brain.classify(query);
-        const instruction = brain.buildInstruction(query, state) + SELF_CHECK;
+        const reflection = brain.reflect(query);
+        const instruction = brain.buildInstruction(query, reflection.state) + SELF_CHECK;
         const config = { ...(options?.config || {}) };
         config.systemInstruction = [config.systemInstruction, instruction].filter(Boolean).join("\n");
-        if (state.search) {
+        if (reflection.state.search) {
           const tools = Array.isArray(config.tools) ? [...config.tools] : [];
           if (!tools.some(t => t && typeof t === "object" && Object.prototype.hasOwnProperty.call(t, "googleSearch"))) tools.push({ googleSearch: {} });
           config.tools = tools;
@@ -76,7 +76,7 @@ function wrappedExpress(...args) {
 
   app.get = function patchedGet(route, ...handlers) {
     if (route === "/api/brain/status") {
-      return originalGet(route, (_req, res) => res.json({ ok: true, version: BRAIN_VERSION, ...capabilities.status(), orchestration: true, automaticGrounding: true, conversationStore: true }));
+      return originalGet(route, (_req, res) => res.json({ ok: true, version: BRAIN_VERSION, ...capabilities.status(), orchestration: true, automaticGrounding: true, conversationStore: true, fastReflection: true, reflectionBudgetMs: brain.REFLECTION_MAX_MS }));
     }
     if (route === "/api/conversations") {
       return originalGet(route, (_req, res) => res.json({ ok: true, conversations: loadConversations().map(({ messages, ...meta }) => meta) }));
@@ -96,8 +96,8 @@ function wrappedExpress(...args) {
       return originalPost(route, (req, res) => {
         const query = typeof req.body?.query === "string" ? req.body.query.trim() : "";
         if (!query) return res.status(400).json({ error: "Requête vide." });
-        const state = brain.classify(query);
-        res.json({ ok: true, query, state, plan: brain.buildPlan(query, state), instruction: brain.buildInstruction(query, state) });
+        const reflection = brain.reflect(query);
+        res.json({ ok: true, query, state: reflection.state, plan: reflection.plan, reflection: { elapsedMs: reflection.elapsedMs, budgetMs: reflection.budgetMs, withinBudget: reflection.withinBudget, mode: reflection.mode }, instruction: brain.buildInstruction(query, reflection.state) });
       });
     }
     if (route === "/api/brain/verify") {
@@ -157,8 +157,8 @@ function wrappedExpress(...args) {
     try {
       const query = typeof req.body?.message === "string" ? req.body.message : typeof req.body?.text === "string" ? req.body.text : typeof req.body?.question === "string" ? req.body.question : Array.isArray(req.body?.messages) ? req.body.messages.map(m => m?.content || "").join(" ") : "";
       if (query) {
-        const state = brain.classify(query);
-        req.wienerBrain = { state, plan: brain.buildPlan(query, state), instruction: brain.buildInstruction(query, state) };
+        const reflection = brain.reflect(query);
+        req.wienerBrain = { state: reflection.state, plan: reflection.plan, instruction: brain.buildInstruction(query, reflection.state), reflection: { elapsedMs: reflection.elapsedMs, budgetMs: reflection.budgetMs, withinBudget: reflection.withinBudget, mode: reflection.mode } };
         if (Array.isArray(req.body?.messages)) req.body.messages = [...req.body.messages, { role: "user", content: `[Orchestration interne Wiener IA]\n${req.wienerBrain.instruction}` }];
       }
     } catch (_) {}
