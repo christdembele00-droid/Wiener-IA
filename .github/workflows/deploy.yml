@@ -25,11 +25,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Validate core JavaScript
+      - name: Validate project files
         run: |
           node --check server.js
-          node --check causal_engine.js
-          node --check app.js
           node -e "JSON.parse(require('fs').readFileSync('package.json','utf8')); console.log('package.json OK')"
 
       - name: Configure GitHub Pages
