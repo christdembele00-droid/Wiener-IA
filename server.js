@@ -2,6 +2,7 @@
 const express=require("express");
 const cors=require("cors");
 const path=require("path");
+const fs=require("fs");
 const {GoogleGenAI}=require("@google/genai");
 const multer=require("multer");
 const app=express();
@@ -16,7 +17,7 @@ const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:MAX_FILE_SI
 app.disable("x-powered-by");
 app.use(cors({origin:true,methods:["GET","POST","OPTIONS"],allowedHeaders:["Content-Type"]}));
 app.use(express.json({limit:"6mb"}));
-app.use(express.static(__dirname));
+app.use(express.static(__dirname,{index:false}));
 const BASE_INSTRUCTIONS=`Tu es Wiener IA, un assistant généraliste intelligent, précis, pédagogique et naturel. Réponds en français par défaut. Comprends la demande avant de répondre. Sois direct et concis pour une demande simple, structuré pour une demande complexe. N'invente jamais de faits, de sources ou d'actions réalisées. N'expose jamais les secrets ou clés API.`;
 const EXERCISE_INSTRUCTIONS=`Résous l'exercice avec rigueur. Donne la méthode, les calculs essentiels et la réponse finale clairement. N'invente aucune donnée manquante.`;
 const ANALYSIS_INSTRUCTIONS=`Analyse la demande de façon fonctionnelle et utile. Ne présente jamais cette analyse comme une conscience biologique ou une expérience subjective.`;
@@ -34,7 +35,7 @@ async function generate(options){return{response:await ai.models.generateContent
 async function generateStream(options,res){const stream=await ai.models.generateContentStream({...options,model:TEXT_MODEL,config:textConfig(options.config)});res.write(`event: start\ndata: ${JSON.stringify({model:TEXT_MODEL})}\n\n`);let full="";for await(const chunk of stream){const text=chunkText(chunk);if(text){full+=text;res.write(`data: ${JSON.stringify({text})}\n\n`)}}if(!full.trim())throw new Error("Wiener IA n'a retourné aucune réponse.");res.write(`event: done\ndata: ${JSON.stringify({answer:full.trim(),model:TEXT_MODEL})}\n\n`);res.end()}
 async function generateImage(prompt){let last=null;for(const model of [...new Set(IMAGE_MODELS)]){try{const x=await ai.interactions.create({model,input:prompt,response_format:{type:"image",mime_type:"image/jpeg",aspect_ratio:"1:1",image_size:"1K"}});const d=x?.output_image?.data;if(d)return{data:d,model};const b=x?.steps?.flatMap(s=>s?.type==="model_output"?(s.content||[]):[]).find(c=>c?.type==="image"&&c?.data);if(b)return{data:b.data,model};throw new Error("Le modèle image n'a fourni aucune image.")}catch(e){last=e;const s=statusOf(e);if(![404,408,425,429,500,502,503,504].includes(s))throw e}}throw last||new Error("Aucun modèle image disponible.")}
 function sendError(res,e){console.error("Wiener IA:",e?.message||e);const s=statusOf(e);if(s===401||s===403)return res.status(s).json({error:"La clé Gemini est invalide ou non autorisée."});if(s===404)return res.status(404).json({error:"Le modèle Gemini 3.5 Flash-Lite est indisponible pour cette clé."});if(s===429)return res.status(429).json({error:"Gemini est temporairement limité. Réessaie dans quelques instants."});if([502,503,504].includes(s))return res.status(s).json({error:"Le service Gemini est temporairement indisponible."});return res.status(500).json({error:e?.message||"Une erreur serveur est survenue."})}
-app.get("/",(_,res)=>res.sendFile(path.join(__dirname,"index.html")));
+app.get("/",(_,res)=>{try{let html=fs.readFileSync(path.join(__dirname,"index.html"),"utf8");const old="let bubble=typing.querySelector('.assistantBubble');bubble.innerHTML='';let stream=await streamChat";const fixed="let bubble=typing.querySelector('.assistantBubble');let stream=await streamChat";if(html.includes(old))html=html.replace(old,fixed);res.type("html").send(html)}catch(e){res.status(500).send("Wiener IA indisponible.")}});
 app.get("/health",(_,res)=>res.json({ok:true,service:"Wiener IA",geminiConfigured:Boolean(ai),model:TEXT_MODEL}));
 app.get("/api/health",(_,res)=>res.json({ok:true,service:"Wiener IA",geminiConfigured:Boolean(ai),textModel:TEXT_MODEL,time:new Date().toISOString()}));
 app.post("/api/chat",async(req,res)=>{try{if(!requireAI(res))return;let messages=cleanMessages(req.body?.messages);if(!messages.length&&typeof req.body?.message==="string"&&req.body.message.trim())messages=[{role:"user",content:req.body.message.trim()}];if(!messages.length)return res.status(400).json({error:"Aucun message valide n'a été reçu."});res.setHeader("Content-Type","text/event-stream; charset=utf-8");res.setHeader("Cache-Control","no-cache, no-transform");res.setHeader("Connection","keep-alive");res.flushHeaders?.();await generateStream({contents:toGemini(messages),config:{systemInstruction:BASE_INSTRUCTIONS,maxOutputTokens:768}},res)}catch(e){if(res.headersSent){res.write(`event: error\ndata: ${JSON.stringify({error:e?.message||"La réponse a été interrompue."})}\n\n`);res.end()}else sendError(res,e)}});
