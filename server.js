@@ -7,7 +7,8 @@ const multer=require("multer");
 const app=express();
 const PORT=Number(process.env.PORT)||10000;
 const API_KEY=process.env.GEMINI_API_KEY;
-const TEXT_MODEL=process.env.GEMINI_TEXT_MODEL||"gemini-3.5-flash-lite";
+// Flash-Lite is optimized for low-latency, high-volume requests.
+const TEXT_MODEL=process.env.GEMINI_TEXT_MODEL||"gemini-2.5-flash-lite";
 const FALLBACK_MODELS=[TEXT_MODEL,"gemini-2.5-flash"].filter((v,i,a)=>v&&a.indexOf(v)===i);
 const IMAGE_MODELS=[process.env.GEMINI_IMAGE_MODEL||"gemini-3.1-flash-image","gemini-2.5-flash-image"];
 const MAX_MESSAGES=8,MAX_MESSAGE_LENGTH=8000,MAX_FILE_SIZE=20*1024*1024;
