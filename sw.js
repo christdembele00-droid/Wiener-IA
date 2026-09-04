@@ -1,12 +1,13 @@
-const CACHE_NAME = "wiener-ia-v5";
+const CACHE_NAME = "wiener-ia-v6";
+const BASE = new URL("./", self.location.href);
 const APP_SHELL = [
-  "/",
-  "/index.html",
-  "/style.css",
-  "/app.js",
-  "/manifest.webmanifest",
-  "/icons/icon-192.svg",
-  "/icons/icon-512.svg"
+  new URL("./", BASE).href,
+  new URL("./index.html", BASE).href,
+  new URL("./style.css", BASE).href,
+  new URL("./app.js", BASE).href,
+  new URL("./manifest.webmanifest", BASE).href,
+  new URL("./icons/icon-192.svg", BASE).href,
+  new URL("./icons/icon-512.svg", BASE).href
 ];
 
 self.addEventListener("install", event => {
@@ -33,10 +34,12 @@ self.addEventListener("fetch", event => {
   event.respondWith(
     fetch(request)
       .then(response => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(request, copy)).catch(() => {});
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(request, copy)).catch(() => {});
+        }
         return response;
       })
-      .catch(() => caches.match(request).then(cached => cached || caches.match("/index.html")))
+      .catch(() => caches.match(request).then(cached => cached || caches.match(new URL("./index.html", BASE).href)))
   );
 });
