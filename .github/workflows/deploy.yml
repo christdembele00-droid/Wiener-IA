@@ -30,13 +30,30 @@ jobs:
           node --check server.js
           node -e "JSON.parse(require('fs').readFileSync('package.json','utf8')); console.log('package.json OK')"
 
+      - name: Prepare GitHub Pages site
+        run: |
+          mkdir -p _site
+          cp -R . _site
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('_site/index.html')
+          s = p.read_text(encoding='utf-8')
+          old = "let bubble=typing.querySelector('.assistantBubble');bubble.innerHTML='';let stream=await streamChat"
+          new = "let bubble=typing.querySelector('.assistantBubble');let stream=await streamChat"
+          if old not in s:
+              raise SystemExit('Progressive streaming pattern not found')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          print('Progressive response display enabled')
+          PY
+          rm -rf _site/.git _site/_site
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: '.'
+          path: './_site'
 
       - name: Deploy to GitHub Pages
         id: deployment
