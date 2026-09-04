@@ -1,30 +1,84 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Wiener IA - Intelligence artificielle moderne créée par Dembele Christ.">
-  <meta name="author" content="Dembele Christ">
-  <meta name="theme-color" content="#000000">
-  <title>Wiener IA</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="theme-color" content="#212121">
+<title>Wiener IA</title>
+<style>
+:root{color-scheme:dark;--bg:#212121;--panel:#171717;--panel2:#2a2a2a;--border:#333;--text:#ececec;--muted:#a8a8a8;--accent:#10a37f}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;overflow:hidden}
+button,textarea{font:inherit}
+button{cursor:pointer}
+.sidebar{width:260px;background:var(--panel);padding:16px;display:flex;flex-direction:column;border-right:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:19px;margin:4px 4px 18px}
+.logo{width:34px;height:34px;border-radius:9px;background:#fff;color:#111;display:grid;place-items:center;font-weight:800;font-size:19px}
+.new-chat{width:100%;padding:12px 14px;background:transparent;color:var(--text);border:1px solid #3b3b3b;border-radius:9px;text-align:left}
+.new-chat:hover{background:#252525}
+.history-title{font-size:12px;color:var(--muted);margin:22px 6px 8px;text-transform:uppercase;letter-spacing:.05em}
+.history{overflow:auto;flex:1}
+.history-empty{padding:10px 6px;color:#777;font-size:13px}
+.history-item{display:block;width:100%;border:0;background:transparent;color:var(--text);padding:10px;border-radius:8px;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.history-item:hover{background:#252525}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{height:58px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border);font-size:14px;color:#ddd}
+.messages{flex:1;overflow:auto;padding:28px 20px 120px}
+.msg{max-width:820px;margin:0 auto 24px;line-height:1.65;font-size:15px}
+.message-label{font-size:13px;font-weight:700;margin-bottom:7px;color:#ddd}
+.message-content{overflow-wrap:anywhere}
+.message.user{background:#303030;border-radius:14px;padding:14px 16px;margin-bottom:18px}
+.message.assistant{padding:0 4px}
+.message.assistant .message-content{color:#ececec}
+.message-actions{margin-top:9px}
+.copy-btn{background:transparent;border:0;color:#8d8d8d;padding:4px;font-size:12px}
+.copy-btn:hover{color:#fff}
+.composer-wrap{position:relative;padding:16px 20px 22px;background:linear-gradient(transparent,var(--bg) 24%)}
+.composer{max-width:820px;margin:auto;display:flex;align-items:flex-end;gap:9px;background:#2a2a2a;border:1px solid #444;border-radius:14px;padding:8px}
+textarea{flex:1;resize:none;min-height:46px;max-height:180px;background:transparent;color:#fff;border:0;outline:0;padding:10px 8px;line-height:1.45}
+.send{width:42px;height:42px;border:0;border-radius:10px;background:#fff;color:#111;font-weight:700}
+.send:disabled{opacity:.35;cursor:not-allowed}
+.send:hover:not(:disabled){background:#eee}
+.note{max-width:820px;margin:8px auto 0;text-align:center;color:#777;font-size:11px}
+pre{background:#111;border:1px solid #333;border-radius:9px;padding:13px;overflow:auto;margin:10px 0}
+code{font-family:Consolas,monospace}
+strong{font-weight:700}
+@media(max-width:760px){.sidebar{display:none}.messages{padding-left:12px;padding-right:12px}.composer-wrap{padding-left:10px;padding-right:10px}.topbar{justify-content:flex-start;padding-left:16px}.msg{font-size:15px}}
+</style>
 </head>
 <body>
-<div class="app">
-  <aside class="sidebar" id="sidebar">
-    <div class="logo-box"><div class="logo-circle">W</div><div class="logo-text"><h1>Wiener IA</h1><p>Créée par Dembele Christ</p></div></div>
-    <button class="new-chat-btn" id="newChatBtn" type="button"><span>＋</span> Nouvelle conversation</button>
-    <div class="history-head"><span>Historique</span><button id="clearHistoryBtn" type="button" title="Effacer l'historique" aria-label="Effacer l'historique">×</button></div>
-    <nav class="history-list" id="historyList" aria-label="Historique des conversations"></nav>
-    <div class="sidebar-footer"><div>Wiener IA</div><small>Version 3.0</small></div>
-  </aside>
-  <main class="main">
-    <header class="topbar"><div class="topbar-left"><button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Ouvrir le menu" aria-expanded="false">☰</button><div class="title">Wiener IA</div></div><div class="status"><span class="status-dot"></span><span>En ligne</span></div></header>
-    <section class="chat-container" id="chatContainer"><div id="messages" class="messages"><div class="message assistant"><div class="message-content">👋 Bonjour !<br><br>Je suis <strong>Wiener IA</strong>.<br><br>Je peux vous aider avec vos questions, vos exercices, vos recherches, vos documents et bien plus encore.</div></div></div></section>
-    <div class="file-preview" id="filePreview" hidden><div class="file-info"><span class="file-icon" id="fileIcon">📄</span><div><strong id="fileName">Aucun fichier</strong><small id="fileSize">0 KB</small></div></div><button type="button" id="removeFileBtn" class="remove-file-btn" aria-label="Supprimer le fichier">×</button></div>
-    <footer class="input-area"><div class="input-container"><button type="button" id="plusBtn" class="plus-btn" title="Outils et modes" aria-label="Outils et modes" aria-expanded="false">＋</button><div class="plus-menu" id="plusMenu" hidden><button type="button" data-mode="chat">Chat IA</button><button type="button" data-mode="exercise">Exercices</button><button type="button" data-mode="search">Recherche Web</button><button type="button" data-mode="image">Génération d'images</button><button type="button" data-mode="pdf">Analyse PDF</button><button type="button" data-mode="calculator">Calculatrice</button><button type="button" id="plusFileBtn">Ajouter un fichier</button></div><input type="file" id="fileInput" accept=".pdf,application/pdf,image/png,image/jpeg,image/webp" hidden><textarea id="userInput" placeholder="Envoyez un message à Wiener IA..." rows="1" maxlength="20000"></textarea><button id="voiceBtn" type="button" class="voice-btn" title="Parler à Wiener IA" aria-label="Activer la saisie vocale"><span aria-hidden="true">🎙</span></button><button id="sendBtn" type="button" class="send-btn"><span class="send-text">Envoyer</span><span class="send-icon">➤</span></button></div></footer>
-  </main>
-</div>
-<script src="app.js"></script>
+<aside class="sidebar">
+  <div class="brand"><div class="logo">W</div><span>Wiener IA</span></div>
+  <button class="new-chat" id="newChat">+ Nouvelle conversation</button>
+  <div class="history-title">Historique</div>
+  <div class="history" id="history"></div>
+</aside>
+<main class="main">
+  <header class="topbar">Wiener IA</header>
+  <section class="messages" id="messages"><div class="msg assistant"><div class="message-label">Wiener IA</div><div class="message-content">Bonjour ! Comment puis-je vous aider ?</div></div></section>
+  <div class="composer-wrap">
+    <div class="composer">
+      <textarea id="input" rows="1" placeholder="Écrivez un message..."></textarea>
+      <button class="send" id="send" aria-label="Envoyer">↑</button>
+    </div>
+    <div class="note">Wiener IA peut faire des erreurs. Vérifiez les informations importantes.</div>
+  </div>
+</main>
+<script>
+const API_URL="https://wiener-ia.onrender.com";
+const messages=document.getElementById("messages"),input=document.getElementById("input"),send=document.getElementById("send"),historyBox=document.getElementById("history");
+let conversation=[];let busy=false;const KEY="wiener_ia_history_v3";
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+function render(t){let s=esc(t);s=s.replace(/```([\\w+-]*)\\n?([\\s\\S]*?)```/g,"<pre><code>$2</code></pre>");s=s.replace(/\\*\\*(.+?)\\*\\*/g,"<strong>$1</strong>");s=s.replace(/`([^`\\n]+)`/g,"<code>$1</code>");return s.replace(/\\n/g,"<br>");}
+function addMessage(text,role){const d=document.createElement("div");d.className="msg "+role;const l=document.createElement("div");l.className="message-label";l.textContent=role==="user"?"Vous":"Wiener IA";const b=document.createElement("div");b.className="message-content";b.innerHTML=role==="user"?esc(text):render(text);d.append(l,b);if(role==="assistant"){const a=document.createElement("div");a.className="message-actions";const c=document.createElement("button");c.className="copy-btn";c.textContent="Copier";c.onclick=()=>navigator.clipboard?.writeText(text);a.append(c);d.append(a)}messages.append(d);messages.scrollTop=messages.scrollHeight;return d;}
+function setBusy(v){busy=v;send.disabled=v||!input.value.trim();input.disabled=v}
+function resize(){input.style.height="auto";input.style.height=Math.min(input.scrollHeight,180)+"px";send.disabled=busy||!input.value.trim()}
+function load(){try{return JSON.parse(localStorage.getItem(KEY)||"[]")}catch{return[]}}
+function save(){localStorage.setItem(KEY,JSON.stringify(load().slice(0,49).concat([{id:Date.now(),title:conversation.find(x=>x.role==="user")?.content?.slice(0,55)||"Nouvelle conversation",history:conversation}]).slice(-50)))}
+function renderHistory(){historyBox.innerHTML="";load().reverse().forEach(x=>{const b=document.createElement("button");b.className="history-item";b.textContent=x.title||"Conversation";b.onclick=()=>{conversation=x.history||[];messages.innerHTML="";conversation.forEach(m=>addMessage(m.content,m.role));};historyBox.append(b)})}
+function newChat(){conversation=[];messages.innerHTML="<div class=\"msg assistant\"><div class=\"message-label\">Wiener IA</div><div class=\"message-content\">Nouvelle conversation. Comment puis-je vous aider ?</div></div>";input.value="";resize();input.focus()}
+async function sendMessage(){const text=input.value.trim();if(!text||busy)return;conversation.push({role:"user",content:text});addMessage(text,"user");input.value="";resize();setBusy(true);const loading=addMessage("Réflexion…","assistant");try{const r=await fetch(API_URL+"/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages:conversation})});const d=await r.json();loading.remove();if(!r.ok)throw new Error(d.error||"Erreur du serveur.");const answer=d.answer||"Aucune réponse.";conversation.push({role:"assistant",content:answer});addMessage(answer,"assistant");save();renderHistory()}catch(e){loading.remove();addMessage(e.message||"Impossible de contacter Wiener IA.","assistant")}finally{setBusy(false);input.focus()}}
+input.addEventListener("input",resize);input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}});send.onclick=sendMessage;document.getElementById("newChat").onclick=newChat;renderHistory();resize();
+</script>
 </body>
 </html>
