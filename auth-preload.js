@@ -8,10 +8,11 @@ express.application.listen=function(...args){
   if(!installed){
     installed=true;
     try{
-      const router=this.router||this._router;
-      const before=router?.stack?.length||0;
+      const initialRouter=this.router||this._router;
+      const before=initialRouter?.stack?.length||0;
       this.use((req,res,next)=>{const origin=req.headers.origin;if(origin===FRONTEND_ORIGIN){res.setHeader("Access-Control-Allow-Origin",origin);res.setHeader("Access-Control-Allow-Credentials","true");res.setHeader("Vary","Origin");}next();});
       authRoutes(this);
+      const router=this.router||this._router;
       const stack=router?.stack;
       if(stack&&stack.length>before){
         const added=stack.splice(before);
