@@ -55,7 +55,7 @@
     <header class="topbar"><div class="topbar-left"><button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Ouvrir le menu">☰</button><div class="title">Wiener IA</div></div><div class="status"><span class="status-dot"></span><span>En ligne</span></div></header>
     <section class="chat-container" id="chatContainer"><div id="messages" class="messages"><div class="message assistant"><div class="message-content">👋 Bonjour !<br><br>Je suis <strong>Wiener IA</strong>.<br><br>Je peux vous aider avec vos questions, vos exercices, vos recherches, vos documents et bien plus encore.</div></div></div></section>
     <div class="file-preview" id="filePreview" hidden><div class="file-info"><span class="file-icon" id="fileIcon">📄</span><div><strong id="fileName">Aucun fichier</strong><small id="fileSize">0 KB</small></div></div><button type="button" id="removeFileBtn" class="remove-file-btn" aria-label="Supprimer le fichier">×</button></div>
-    <footer class="input-area"><div class="input-container"><button type="button" id="plusBtn" class="plus-btn" title="Outils et modes" aria-label="Outils et modes">＋</button><div class="plus-menu" id="plusMenu" hidden><button type="button" data-mode="chat">Chat IA</button><button type="button" data-mode="exercise">Exercices</button><button type="button" data-mode="search">Recherche Web</button><button type="button" data-mode="image">Génération d'images</button><button type="button" data-mode="pdf">Analyse PDF</button><button type="button" data-mode="calculator">Calculatrice</button><button type="button" id="plusFileBtn">Ajouter un fichier</button></div><input type="file" id="fileInput" accept=".pdf,application/pdf,image/png,image/jpeg,image/webp" hidden><textarea id="userInput" placeholder="Envoyez un message à Wiener IA..." rows="1" maxlength="20000"></textarea><button id="sendBtn" type="button" class="send-btn"><span class="send-text">Envoyer</span><span class="send-icon">➤</span></button></div></footer>
+    <footer class="input-area"><div class="input-container"><button type="button" id="plusBtn" class="plus-btn" title="Outils et modes" aria-label="Outils et modes">＋</button><div class="plus-menu" id="plusMenu" hidden><button type="button" data-mode="chat">Chat IA</button><button type="button" data-mode="exercise">Exercices</button><button type="button" data-mode="search">Recherche Web</button><button type="button" data-mode="image">Génération d'images</button><button type="button" data-mode="pdf">Analyse PDF</button><button type="button" data-mode="calculator">Calculatrice</button><button type="button" id="plusFileBtn">Ajouter un fichier</button></div><input type="file" id="fileInput" accept=".pdf,application/pdf,image/png,image/jpeg,image/webp" hidden><textarea id="userInput" placeholder="Envoyez un message à Wiener IA..." rows="1" maxlength="20000"></textarea><button id="voiceBtn" type="button" class="voice-btn" title="Parler à Wiener IA" aria-label="Activer la saisie vocale"><span aria-hidden="true">🎙</span></button><button id="sendBtn" type="button" class="send-btn"><span class="send-text">Envoyer</span><span class="send-icon">➤</span></button></div></footer>
   </main>
 </div>
 <script src="app.js"></script>
@@ -64,7 +64,7 @@
 (() => {
   const init = () => {
     if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js", {scope:"./"}).catch(err => console.warn("Service worker:", err)));
-    const fileInput=document.getElementById("fileInput"), plusBtn=document.getElementById("plusBtn"), plusMenu=document.getElementById("plusMenu"), plusFileBtn=document.getElementById("plusFileBtn"), filePreview=document.getElementById("filePreview"), fileName=document.getElementById("fileName"), fileSize=document.getElementById("fileSize"), fileIcon=document.getElementById("fileIcon"), removeFileBtn=document.getElementById("removeFileBtn"), userInput=document.getElementById("userInput"), mobileMenuBtn=document.getElementById("mobileMenuBtn"), sidebar=document.getElementById("sidebar");
+    const fileInput=document.getElementById("fileInput"), plusBtn=document.getElementById("plusBtn"), plusMenu=document.getElementById("plusMenu"), plusFileBtn=document.getElementById("plusFileBtn"), filePreview=document.getElementById("filePreview"), fileName=document.getElementById("fileName"), fileSize=document.getElementById("fileSize"), fileIcon=document.getElementById("fileIcon"), removeFileBtn=document.getElementById("removeFileBtn"), userInput=document.getElementById("userInput"), mobileMenuBtn=document.getElementById("mobileMenuBtn"), sidebar=document.getElementById("sidebar"), voiceBtn=document.getElementById("voiceBtn");
     window.wienerSelectedFile=null;
     const openFilePicker=(event)=>{event?.preventDefault();if(!fileInput)return;try{if(typeof fileInput.showPicker==="function")fileInput.showPicker();else fileInput.click();}catch(_){fileInput.click();}};
     plusBtn?.addEventListener("click",e=>{e.stopPropagation();if(plusMenu)plusMenu.hidden=!plusMenu.hidden;});
@@ -77,6 +77,20 @@
     window.removeWienerSelectedFile=removeSelectedFile;
     function addFileMessage(text){const box=document.getElementById("messages");if(!box)return;const div=document.createElement("div");div.className="message assistant";div.textContent=text;box.appendChild(div);box.scrollTop=box.scrollHeight;}
     function formatFileSize(bytes){if(bytes<1024)return bytes+" octets";if(bytes<1024*1024)return(bytes/1024).toFixed(1)+" KB";return(bytes/(1024*1024)).toFixed(1)+" MB";}
+
+    const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(voiceBtn){
+      if(!SpeechRecognition){voiceBtn.title="La saisie vocale n'est pas disponible dans ce navigateur";voiceBtn.setAttribute("aria-label",voiceBtn.title);voiceBtn.disabled=true;}
+      else{
+        const recognition=new SpeechRecognition();
+        recognition.lang="fr-FR";recognition.interimResults=true;recognition.continuous=false;recognition.maxAlternatives=1;
+        recognition.onstart=()=>{voiceBtn.classList.add("recording");voiceBtn.setAttribute("aria-label","Arrêter la saisie vocale");voiceBtn.title="Arrêter la saisie vocale";};
+        recognition.onend=()=>{voiceBtn.classList.remove("recording");voiceBtn.setAttribute("aria-label","Activer la saisie vocale");voiceBtn.title="Parler à Wiener IA";};
+        recognition.onerror=event=>{console.warn("Saisie vocale:",event.error);recognition.stop();};
+        recognition.onresult=event=>{let transcript="";for(let i=event.resultIndex;i<event.results.length;i++)transcript+=event.results[i][0].transcript;userInput.value=transcript;userInput.dispatchEvent(new Event("input",{bubbles:true}));userInput.focus();};
+        voiceBtn.addEventListener("click",()=>{try{if(voiceBtn.classList.contains("recording")){recognition.stop();}else{recognition.start();}}catch(_){}});
+      }
+    }
   };
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
 })();
