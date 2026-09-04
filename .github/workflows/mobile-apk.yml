@@ -53,6 +53,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Initialize EAS Project
+        run: eas init --account christ111 --force --non-interactive
+
       - name: Validate Expo project
         run: npx expo config --type public
 
