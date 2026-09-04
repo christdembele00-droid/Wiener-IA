@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "name": "Wiener IA",
+    "slug": "wiener-ia",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#171717"
+    },
+    "android": {
+      "package": "com.dembelechrist.wieneria"
+    },
+    "ios": {
+      "bundleIdentifier": "com.dembelechrist.wieneria"
+    }
+  }
+}
