@@ -1,0 +1,66 @@
+name: Repair Wiener IA chat display
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Remove internal analysis trace and separate messages
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app.js')
+          s = p.read_text(encoding='utf-8')
+          old = s
+
+          # Never display internal functional/causal analysis in the conversation.
+          import re
+          s = re.sub(r'function showCausalTrace\(causal,extra=\{\}\)\{.*?\nfunction loadNavigationHistory', 'function loadNavigationHistory', s, count=1, flags=re.S)
+          s = s.replace('if(data.causal)showCausalTrace(data.causal,data);return data;', 'return data;')
+          s = s.replace('if(data.causal)showCausalTrace(data.causal,data);return data;', 'return data;')
+          s = s.replace('if(data.causal)showCausalTrace(data.causal,data);', '')
+
+          # Make user questions and Wiener answers explicit, while keeping the existing message layout.
+          s = s.replace('function addMessage(content,role){const div=document.createElement("div");div.className=role==="user"?"message user":"message assistant";div.textContent=String(content??"");messages?.appendChild(div);scrollChat();return div;}', 'function addMessage(content,role){const div=document.createElement("div"),isUser=role==="user";div.className=isUser?"message user":"message assistant";div.dataset.role=isUser?"user":"assistant";const label=document.createElement("div");label.className="message-label";label.textContent=isUser?"Vous":"Wiener IA";const body=document.createElement("div");body.className="message-content";body.textContent=String(content??"");div.append(label,body);messages?.appendChild(div);scrollChat();return div;}')
+          s = s.replace('function typeMessage(content,role="assistant",speed=8){const div=document.createElement("div");div.className=role==="user"?"message user":"message assistant";messages?.appendChild(div);const text=String(content??"");if(!text){scrollChat();return div;}for(let i=0;i<text.length;i++){div.textContent+=text[i];if(i%3===0)scrollChat();await new Promise(r=>setTimeout(r,speed));}scrollChat();return div;}', 'async function typeMessage(content,role="assistant",speed=8){const div=document.createElement("div"),isUser=role==="user";div.className=isUser?"message user":"message assistant";div.dataset.role=isUser?"user":"assistant";const label=document.createElement("div");label.className="message-label";label.textContent=isUser?"Vous":"Wiener IA";const body=document.createElement("div");body.className="message-content";div.append(label,body);messages?.appendChild(div);const text=String(content??"");if(!text){scrollChat();return div;}for(let i=0;i<text.length;i++){body.textContent+=text[i];if(i%3===0)scrollChat();await new Promise(r=>setTimeout(r,speed));}scrollChat();return div;}')
+          s = s.replace('const loading=document.createElement("div");loading.className="message assistant";loading.textContent="Wiener IA réfléchit…";', 'const loading=document.createElement("div");loading.className="message assistant";loading.dataset.role="assistant";loading.innerHTML="<div class=\"message-label\">Wiener IA</div><div class=\"message-content\">Wiener IA réfléchit…</div>";')
+
+          p.write_text(s, encoding='utf-8')
+          
+          css = Path('style.css')
+          c = css.read_text(encoding='utf-8')
+          c = c.replace('.message{padding:10px 2px;border-radius:0;line-height:1.7;font-size:15px;background:transparent!important;white-space:pre-wrap;overflow-wrap:anywhere;}', '.message{padding:10px 2px;border-radius:0;line-height:1.7;font-size:15px;background:transparent!important;white-space:pre-wrap;overflow-wrap:anywhere;}.message-label{font-size:11px;font-weight:700;letter-spacing:.02em;margin-bottom:4px;color:#9ca3af;}.user .message-label{color:#10A37F;}.message-content{white-space:pre-wrap;overflow-wrap:anywhere;}')
+          c = c.replace('.functional-trace{opacity:.65;font-size:.82em;}\n', '')
+          css.write_text(c, encoding='utf-8')
+
+          if s == old:
+              print('app.js did not require source changes')
+          else:
+              print('app.js repaired')
+          PY
+
+      - name: Commit repair
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js style.css
+          if git diff --cached --quiet; then
+            echo 'Nothing to commit.'
+            exit 0
+          fi
+          git commit -m 'fix: hide internal analysis and separate chat messages'
+          git push
