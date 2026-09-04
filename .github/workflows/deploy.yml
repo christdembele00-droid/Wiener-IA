@@ -32,8 +32,9 @@ jobs:
 
       - name: Prepare GitHub Pages site
         run: |
+          rm -rf _site
           mkdir -p _site
-          cp -R . _site
+          find . -maxdepth 1 ! -name '.' ! -name '_site' ! -name '.git' -exec cp -R {} _site/ \;
           python3 - <<'PY'
           from pathlib import Path
           p = Path('_site/index.html')
