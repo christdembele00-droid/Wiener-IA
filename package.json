@@ -1,6 +1,6 @@
 {
   "name": "wiener-ia",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "Wiener IA - Intelligence artificielle créée par Dembele Christ",
   "main": "server.js",
   "scripts": {
