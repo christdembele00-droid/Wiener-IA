@@ -13,12 +13,14 @@ on:
 
 jobs:
   deploy:
+    name: Deploy to Firebase
     runs-on: ubuntu-latest
     permissions:
       contents: read
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -32,6 +34,23 @@ jobs:
         working-directory: functions
         run: npm install
 
+      - name: Prepare Functions environment
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FIREBASE_WEB_API_KEY: ${{ secrets.FIREBASE_WEB_API_KEY }}
+          CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}
+          GEMINI_TEXT_MODEL: ${{ secrets.GEMINI_TEXT_MODEL }}
+          GEMINI_IMAGE_MODEL: ${{ secrets.GEMINI_IMAGE_MODEL }}
+        run: |
+          test -n "$GEMINI_API_KEY"
+          test -n "$FIREBASE_WEB_API_KEY"
+          test -n "$CLOUDINARY_URL"
+          printf 'GEMINI_API_KEY=%s\n' "$GEMINI_API_KEY" > functions/.env
+          printf 'FIREBASE_WEB_API_KEY=%s\n' "$FIREBASE_WEB_API_KEY" >> functions/.env
+          printf 'CLOUDINARY_URL=%s\n' "$CLOUDINARY_URL" >> functions/.env
+          printf 'GEMINI_TEXT_MODEL=%s\n' "${GEMINI_TEXT_MODEL:-gemini-3.5-flash-lite}" >> functions/.env
+          printf 'GEMINI_IMAGE_MODEL=%s\n' "${GEMINI_IMAGE_MODEL:-gemini-3.1-flash-image}" >> functions/.env
+
       - name: Create Firebase service account file
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
@@ -39,7 +58,12 @@ jobs:
           test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
 
-      - name: Deploy Firebase Functions and Firestore
+      - name: Deploy Firebase
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --project weiner-ia --only functions,firestore:rules,firestore:indexes --non-interactive
+        run: firebase deploy --project weiner-ia --only functions,hosting,firestore:rules,firestore:indexes --non-interactive
+
+      - name: Cleanup credentials
+        if: always()
+        run: |
+          rm -f "$RUNNER_TEMP/firebase-service-account.json" functions/.env
