@@ -28,9 +28,24 @@ function initFirebase() {
 }
 
 function initCloudinary() {
+  // Support either the three separate Render variables or Cloudinary's
+  // standard CLOUDINARY_URL. Secrets remain server-side only.
+  const cloudUrl = process.env.CLOUDINARY_URL;
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
   const apiKey = process.env.CLOUDINARY_API_KEY;
   const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+  if (cloudUrl) {
+    try {
+      cloudinary.config({ cloudinary_url: cloudUrl, secure: true });
+      cloudinaryReady = Boolean(cloudinary.config().cloud_name);
+      return cloudinaryReady;
+    } catch (error) {
+      console.error("Cloudinary initialization:", error.message);
+      return false;
+    }
+  }
+
   if (!cloudName || !apiKey || !apiSecret) return false;
   cloudinary.config({ cloud_name: cloudName, api_key: apiKey, api_secret: apiSecret, secure: true });
   cloudinaryReady = true;
