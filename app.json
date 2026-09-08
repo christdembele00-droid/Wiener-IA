@@ -15,7 +15,7 @@
       "buildNumber": "1"
     },
     "extra": {
-      "apiUrl": "https://wiener-ia.onrender.com"
+      "apiUrl": "https://us-central1-weiner-ia.cloudfunctions.net/api"
     }
   }
 }
