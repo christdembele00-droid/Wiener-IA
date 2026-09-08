@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -16,12 +16,37 @@ import { fetch as expoFetch } from 'expo/fetch';
 
 const API = String(Constants.expoConfig?.extra?.apiUrl || 'https://wiener-ia.onrender.com').replace(/\/$/, '');
 
+function makeConversationId() {
+  return `conv-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export default function App() {
   const [mode, setMode] = useState('chat');
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [userId, setUserId] = useState('');
+  const [conversationId, setConversationId] = useState(makeConversationId);
+
+  useEffect(() => {
+    let active = true;
+    async function initSession() {
+      try {
+        const response = await expoFetch(`${API}/api/session`, { headers: { Accept: 'application/json' } });
+        const data = await response.json();
+        if (!response.ok || !data?.userId) throw new Error(data?.error || `Session ${response.status}`);
+        if (active) {
+          setUserId(String(data.userId));
+          setConversationId(makeConversationId());
+        }
+      } catch (e) {
+        if (active) setError(e?.message || 'Session Wiener IA indisponible.');
+      }
+    }
+    initSession();
+    return () => { active = false; };
+  }, []);
 
   const placeholder = useMemo(() => ({
     chat: 'Message à Wiener IA…',
@@ -54,9 +79,16 @@ export default function App() {
         body = { prompt: text };
       }
 
+      const headers = {
+        'Content-Type': 'application/json',
+        Accept: mode === 'chat' ? 'text/event-stream, application/json' : 'application/json',
+      };
+      if (userId) headers['X-User-ID'] = userId;
+      if (conversationId) headers['X-Conversation-ID'] = conversationId;
+
       const response = await expoFetch(`${API}${endpoint}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json, text/event-stream' },
+        headers,
         body: JSON.stringify(body),
       });
 
