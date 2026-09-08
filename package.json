@@ -2,7 +2,7 @@
   "name": "wiener-ia",
   "version": "3.1.2",
   "description": "Wiener IA - Intelligence artificielle créée par Dembele Christ",
-  "main": "firebase-entry.js",
+  "main": "index.js",
   "scripts": {
     "start": "node server.js",
     "mobile": "expo start",
@@ -19,7 +19,6 @@
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "firebase-admin": "^14.3.0",
-    "firebase-functions": "^7.3.0",
     "multer": "^2.0.2",
     "expo": "~55.0.21",
     "expo-constants": "~18.0.13",
