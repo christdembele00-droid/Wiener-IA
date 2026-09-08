@@ -34,23 +34,6 @@ jobs:
         working-directory: functions
         run: npm install
 
-      - name: Prepare Functions environment
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          FIREBASE_WEB_API_KEY: ${{ secrets.FIREBASE_WEB_API_KEY }}
-          CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}
-          GEMINI_TEXT_MODEL: ${{ secrets.GEMINI_TEXT_MODEL }}
-          GEMINI_IMAGE_MODEL: ${{ secrets.GEMINI_IMAGE_MODEL }}
-        run: |
-          test -n "$GEMINI_API_KEY"
-          test -n "$FIREBASE_WEB_API_KEY"
-          test -n "$CLOUDINARY_URL"
-          printf 'GEMINI_API_KEY=%s\n' "$GEMINI_API_KEY" > functions/.env
-          printf 'FIREBASE_WEB_API_KEY=%s\n' "$FIREBASE_WEB_API_KEY" >> functions/.env
-          printf 'CLOUDINARY_URL=%s\n' "$CLOUDINARY_URL" >> functions/.env
-          printf 'GEMINI_TEXT_MODEL=%s\n' "${GEMINI_TEXT_MODEL:-gemini-3.5-flash-lite}" >> functions/.env
-          printf 'GEMINI_IMAGE_MODEL=%s\n' "${GEMINI_IMAGE_MODEL:-gemini-3.1-flash-image}" >> functions/.env
-
       - name: Create Firebase service account file
         env:
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
@@ -58,12 +41,34 @@ jobs:
           test -n "$FIREBASE_SERVICE_ACCOUNT_JSON"
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT_JSON" > "$RUNNER_TEMP/firebase-service-account.json"
 
-      - name: Deploy Firebase
+      - name: Create temporary secret files
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FIREBASE_WEB_API_KEY: ${{ secrets.FIREBASE_WEB_API_KEY }}
+          CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}
+        run: |
+          test -n "$GEMINI_API_KEY"
+          test -n "$FIREBASE_WEB_API_KEY"
+          test -n "$CLOUDINARY_URL"
+          printf '%s' "$GEMINI_API_KEY" > "$RUNNER_TEMP/gemini-api-key"
+          printf '%s' "$FIREBASE_WEB_API_KEY" > "$RUNNER_TEMP/firebase-web-api-key"
+          printf '%s' "$CLOUDINARY_URL" > "$RUNNER_TEMP/cloudinary-url"
+
+      - name: Sync Firebase Secret Manager
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-        run: firebase deploy --project weiner-ia --only functions,hosting,firestore:rules,firestore:indexes --non-interactive
+        run: |
+          firebase functions:secrets:set GEMINI_API_KEY --project weiner-ia --data-file "$RUNNER_TEMP/gemini-api-key"
+          firebase functions:secrets:set FIREBASE_WEB_API_KEY --project weiner-ia --data-file "$RUNNER_TEMP/firebase-web-api-key"
+          firebase functions:secrets:set CLOUDINARY_URL --project weiner-ia --data-file "$RUNNER_TEMP/cloudinary-url"
 
-      - name: Cleanup credentials
+      - name: Deploy Functions and Firestore
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: firebase deploy --project weiner-ia --only functions,firestore:rules,firestore:indexes --non-interactive
+
+      - name: Cleanup credentials and temporary secrets
         if: always()
         run: |
-          rm -f "$RUNNER_TEMP/firebase-service-account.json" functions/.env
+          rm -f "$RUNNER_TEMP/firebase-service-account.json"
+          rm -f "$RUNNER_TEMP/gemini-api-key" "$RUNNER_TEMP/firebase-web-api-key" "$RUNNER_TEMP/cloudinary-url"
