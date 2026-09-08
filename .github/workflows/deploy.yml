@@ -25,27 +25,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Validate project files
+      - name: Validate static and Firebase project files
         run: |
-          node --check server.js
-          node -e "JSON.parse(require('fs').readFileSync('package.json','utf8')); console.log('package.json OK')"
+          node --check functions/index.js
+          node -e "JSON.parse(require('fs').readFileSync('package.json','utf8')); JSON.parse(require('fs').readFileSync('app.json','utf8')); JSON.parse(require('fs').readFileSync('firebase.json','utf8')); console.log('Project JSON OK')"
 
       - name: Prepare GitHub Pages site
         run: |
           rm -rf _site
           mkdir -p _site
-          find . -maxdepth 1 ! -name '.' ! -name '_site' ! -name '.git' -exec cp -R {} _site/ \;
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('_site/index.html')
-          s = p.read_text(encoding='utf-8')
-          old = "let bubble=typing.querySelector('.assistantBubble');bubble.innerHTML='';let stream=await streamChat"
-          new = "let bubble=typing.querySelector('.assistantBubble');let stream=await streamChat"
-          if old not in s:
-              raise SystemExit('Progressive streaming pattern not found')
-          p.write_text(s.replace(old, new, 1), encoding='utf-8')
-          print('Progressive response display enabled')
-          PY
+          cp index.html _site/
+          find . -maxdepth 1 -type f \( -name '*.css' -o -name '*.js' -o -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.svg' -o -name '*.webp' -o -name '*.ico' \) -exec cp {} _site/ \;
           rm -rf _site/.git _site/_site
 
       - name: Configure GitHub Pages
