@@ -5,18 +5,17 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
-    "description": "Wiener IA — intelligence artificielle personnelle créée par Dembele Christ.",
     "scheme": "wieneria",
-    "splash": {
-      "backgroundColor": "#171717"
-    },
     "android": {
-      "package": "com.dembelechrist.wieneria",
+      "package": "com.wieneria.app",
       "versionCode": 1
     },
     "ios": {
-      "bundleIdentifier": "com.dembelechrist.wieneria",
+      "bundleIdentifier": "com.wieneria.app",
       "buildNumber": "1"
+    },
+    "extra": {
+      "apiUrl": "https://us-central1-weiner-ia.cloudfunctions.net/api"
     }
   }
 }
