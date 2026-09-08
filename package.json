@@ -4,7 +4,6 @@
   "description": "Wiener IA - Intelligence artificielle créée par Dembele Christ",
   "main": "index.js",
   "scripts": {
-    "start": "node server.js",
     "mobile": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
@@ -14,12 +13,6 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@google/genai": "^2.21.0",
-    "cloudinary": "^2.7.0",
-    "cors": "^2.8.5",
-    "express": "^5.1.0",
-    "firebase-admin": "^14.3.0",
-    "multer": "^2.0.2",
     "expo": "~55.0.21",
     "expo-constants": "~18.0.13",
     "react": "19.2.0",
