@@ -5,8 +5,24 @@ const {getAuth}=require("firebase-admin/auth");
 const {getFirestore,FieldValue}=require("firebase-admin/firestore");
 const {v2:cloudinary}=require("cloudinary");
 let db=null,auth=null,firebaseReady=false,cloudinaryReady=false;
-function initFirebase(){const projectId=process.env.FIREBASE_PROJECT_ID||"weiner-ia",clientEmail=process.env.FIREBASE_CLIENT_EMAIL,privateKey=process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g,"\n");if(!clientEmail||!privateKey)return false;try{const app=getApps().length?getApps()[0]:initializeApp({credential:cert({projectId,clientEmail,privateKey})});db=getFirestore(app);auth=getAuth(app);firebaseReady=true;return true}catch(e){console.error("Firebase initialization:",e.message);return false}}
-function initCloudinary(){const cloudUrl=process.env.CLOUDINARY_URL,cloudName=process.env.CLOUDINARY_CLOUD_NAME,apiKey=process.env.CLOUDINARY_API_KEY,apiSecret=process.env.CLOUDINARY_API_SECRET;if(cloudUrl){try{cloudinary.config({cloudinary_url:cloudUrl,secure:true});cloudinaryReady=Boolean(cloudinary.config().cloud_name);return cloudinaryReady}catch(e){console.error("Cloudinary initialization:",e.message);return false}}if(!cloudName||!apiKey||!apiSecret)return false;cloudinary.config({cloud_name:cloudName,api_key:apiKey,api_secret:apiSecret,secure:true});cloudinaryReady=true;return true}
+function initFirebase(){
+  const projectId=process.env.FIREBASE_PROJECT_ID||"weiner-ia";
+  const clientEmail=process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey=process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g,"\n");
+  try{
+    let app;
+    if(getApps().length) app=getApps()[0];
+    else if(clientEmail&&privateKey) app=initializeApp({credential:cert({projectId,clientEmail,privateKey})});
+    else app=initializeApp({projectId});
+    db=getFirestore(app);auth=getAuth(app);firebaseReady=true;return true;
+  }catch(e){console.error("Firebase initialization:",e.message);return false}
+}
+function initCloudinary(){
+  const cloudUrl=process.env.CLOUDINARY_URL,cloudName=process.env.CLOUDINARY_CLOUD_NAME,apiKey=process.env.CLOUDINARY_API_KEY,apiSecret=process.env.CLOUDINARY_API_SECRET;
+  if(cloudUrl){try{cloudinary.config({cloudinary_url:cloudUrl,secure:true});cloudinaryReady=Boolean(cloudinary.config().cloud_name);return cloudinaryReady}catch(e){console.error("Cloudinary initialization:",e.message);return false}}
+  if(!cloudName||!apiKey||!apiSecret)return false;
+  cloudinary.config({cloud_name:cloudName,api_key:apiKey,api_secret:apiSecret,secure:true});cloudinaryReady=true;return true;
+}
 initFirebase();initCloudinary();
 function safeId(v,fallback){const id=String(v||fallback||"").trim();return/^[A-Za-z0-9_-]{1,128}$/.test(id)?id:fallback}
 function getUserId(req){return safeId(req.get("x-user-id"),null)}
