@@ -4,30 +4,30 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'mobile/**'
+      - 'App.js'
+      - 'app.json'
+      - 'eas.json'
+      - 'package.json'
       - '.github/workflows/mobile-apk.yml'
 
 jobs:
   build-apk:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: mobile
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 24
+          node-version: 22
 
       - name: Install Expo and EAS CLI
         run: npm install --global eas-cli@latest
 
-      - name: Validate and normalize EXPO_TOKEN
+      - name: Validate Expo token
         shell: bash
         run: |
           set -euo pipefail
@@ -36,15 +36,7 @@ jobs:
             exit 1
           fi
           CLEAN_TOKEN="$(printf '%s' "$EXPO_TOKEN" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-          if [ -z "$CLEAN_TOKEN" ]; then
-            echo "EXPO_TOKEN is empty after normalization."
-            exit 1
-          fi
-          if [[ "$CLEAN_TOKEN" == *$'\r'* || "$CLEAN_TOKEN" == *$'\n'* ]]; then
-            echo "EXPO_TOKEN still contains an invalid line break."
-            exit 1
-          fi
-          echo "EXPO_TOKEN is present and normalized."
+          test -n "$CLEAN_TOKEN"
           echo "EXPO_TOKEN=$CLEAN_TOKEN" >> "$GITHUB_ENV"
 
       - name: Verify EAS authentication
@@ -52,9 +44,6 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-
-      - name: Initialize EAS Project
-        run: eas init --account christ111 --force --non-interactive
 
       - name: Validate Expo project
         run: npx expo config --type public
