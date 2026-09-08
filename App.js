@@ -12,8 +12,9 @@ import {
   View,
 } from 'react-native';
 import Constants from 'expo-constants';
+import { fetch as expoFetch } from 'expo/fetch';
 
-const API = Constants.expoConfig?.extra?.apiUrl || 'https://us-central1-weiner-ia.cloudfunctions.net/api';
+const API = String(Constants.expoConfig?.extra?.apiUrl || 'https://wiener-ia.onrender.com').replace(/\/$/, '');
 
 export default function App() {
   const [mode, setMode] = useState('chat');
@@ -53,9 +54,9 @@ export default function App() {
         body = { prompt: text };
       }
 
-      const response = await fetch(`${API}${endpoint}`, {
+      const response = await expoFetch(`${API}${endpoint}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json, text/event-stream' },
         body: JSON.stringify(body),
       });
 
@@ -81,21 +82,27 @@ export default function App() {
               try {
                 const event = JSON.parse(line.slice(6));
                 if (event.text) answer += event.text;
-              } catch (_) {}
+                if (event.error && !answer) throw new Error(event.error);
+              } catch (parseError) {
+                if (parseError instanceof Error && parseError.message && !parseError.message.includes('Unexpected')) throw parseError;
+              }
             }
           }
+          if (!answer.trim()) answer = 'Wiener IA n’a retourné aucune réponse.';
         } else {
           const data = await response.json();
           answer = data.answer || data.response || '';
         }
       } else {
         const data = await response.json();
-        answer = mode === 'image' ? (data.url ? `Image générée : ${data.url}` : 'Image générée.') : (data.answer || data.response || '');
+        answer = mode === 'image'
+          ? (data.url ? `Image générée : ${data.url}` : 'Image générée.')
+          : (data.answer || data.response || '');
       }
 
       setMessages((current) => [...current, { role: 'assistant', content: answer || 'Wiener IA n’a retourné aucune réponse.' }]);
     } catch (e) {
-      setError(e?.message || 'Une erreur est survenue.');
+      setError(e?.message || 'Impossible de joindre le serveur Wiener IA.');
       setMessages((current) => [...current, { role: 'assistant', content: 'Impossible de contacter Wiener IA pour le moment.' }]);
     } finally {
       setBusy(false);
