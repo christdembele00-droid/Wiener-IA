@@ -44,14 +44,14 @@ jobs:
       - name: Create temporary secret files
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          FIREBASE_WEB_API_KEY: ${{ secrets.FIREBASE_WEB_API_KEY }}
+          WIENER_FIREBASE_WEB_API_KEY: ${{ secrets.WIENER_FIREBASE_WEB_API_KEY }}
           CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}
         run: |
           test -n "$GEMINI_API_KEY"
-          test -n "$FIREBASE_WEB_API_KEY"
+          test -n "$WIENER_FIREBASE_WEB_API_KEY"
           test -n "$CLOUDINARY_URL"
           printf '%s' "$GEMINI_API_KEY" > "$RUNNER_TEMP/gemini-api-key"
-          printf '%s' "$FIREBASE_WEB_API_KEY" > "$RUNNER_TEMP/firebase-web-api-key"
+          printf '%s' "$WIENER_FIREBASE_WEB_API_KEY" > "$RUNNER_TEMP/firebase-web-api-key"
           printf '%s' "$CLOUDINARY_URL" > "$RUNNER_TEMP/cloudinary-url"
 
       - name: Sync Firebase Secret Manager
@@ -59,7 +59,7 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: |
           firebase functions:secrets:set GEMINI_API_KEY --project weiner-ia --data-file "$RUNNER_TEMP/gemini-api-key"
-          firebase functions:secrets:set FIREBASE_WEB_API_KEY --project weiner-ia --data-file "$RUNNER_TEMP/firebase-web-api-key"
+          firebase functions:secrets:set WIENER_FIREBASE_WEB_API_KEY --project weiner-ia --data-file "$RUNNER_TEMP/firebase-web-api-key"
           firebase functions:secrets:set CLOUDINARY_URL --project weiner-ia --data-file "$RUNNER_TEMP/cloudinary-url"
 
       - name: Deploy Functions and Firestore
