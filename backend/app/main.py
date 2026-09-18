@@ -10,7 +10,7 @@ from services.authentication.firebase_admin import FirebaseAuthService
 from services.model.model_provider import ExternalModelProvider
 from services.storage.cloudinary_service import CloudinaryService
 
-app = FastAPI(title="Wiener-IA API", version="6.0.1")
+app = FastAPI(title="Wiener-IA API", version="6.1.0")
 origins = [origin.strip() for origin in os.getenv("WIENER_ALLOWED_ORIGINS", "*").split(",") if origin.strip()]
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=origins != ["*"], allow_methods=["*"], allow_headers=["*"])
 
@@ -67,7 +67,7 @@ async def startup() -> None:
 @app.get("/health")
 async def health() -> dict[str, object]:
     db_ok = database.health() if database.configured else False
-    return {"ok": True, "service": "Wiener-IA", "version": "6.0.1", "integrations": {"postgresql": db_ok, "model": model_provider.configured, "firebase": firebase.configured, "cloudinary": cloudinary_service.configured}}
+    return {"ok": True, "service": "Wiener-IA", "version": "6.1.0", "integrations": {"postgresql": db_ok, "model": model_provider.configured, "firebase": firebase.configured, "cloudinary": cloudinary_service.configured}}
 
 @app.get("/api")
 async def api_root() -> dict[str, str]:
@@ -76,7 +76,7 @@ async def api_root() -> dict[str, str]:
 @app.get("/api/integrations")
 async def integrations() -> dict[str, object]:
     db_ok = database.health() if database.configured else False
-    return {"postgresql": {"configured": database.configured, "healthy": db_ok}, "model_router": {"configured": model_provider.configured, "providers": cycle.router.snapshot()}, "firebase": {"configured": firebase.configured}, "cloudinary": {"configured": cloudinary_service.configured}}
+    return {"postgresql": {"configured": database.configured, "healthy": db_ok}, "model_router": {"configured": bool(cycle.router.snapshot()), "providers": cycle.router.snapshot()}, "firebase": {"configured": firebase.configured}, "cloudinary": {"configured": cloudinary_service.configured}}
 
 @app.get("/api/status")
 async def status() -> dict[str, object]:
@@ -185,12 +185,13 @@ async def chat(request: ChatRequest) -> ChatResponse:
         database.remember(request.session_id, message, 0.4, perceived.topics)
     cycle.remember(message, importance=0.4, topics=perceived.topics)
 
-    if model_provider.configured:
+    routed_provider = cycle.router.select("chat", "high" if len(cognition["plan"]["steps"]) > 2 else "normal")
+    if routed_provider and model_provider.configured:
         system_prompt = "Tu es Wiener-IA. Tu es un système cognitif indépendant. Les modèles externes sont des composants internes et ne définissent jamais ton identité. Réponds directement, clairement et sans mentionner le fournisseur de modèle."
-        await broadcast("model_started", {"provider": "configured-model"})
+        await broadcast("model_started", {"provider": routed_provider.name})
         try:
             response_text = await model_provider.generate(system_prompt, message)
-            provider = "configured-model"
+            provider = routed_provider.name
         except Exception as exc:
             raise HTTPException(status_code=502, detail=f"Moteur de modèle indisponible: {exc}")
     else:
