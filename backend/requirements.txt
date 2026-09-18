@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+sqlalchemy
+asyncpg
+psycopg[binary]
+httpx
+firebase-admin
+cloudinary
+python-multipart
+pytest
