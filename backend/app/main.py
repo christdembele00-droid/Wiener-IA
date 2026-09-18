@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from cognitive.core import CognitiveCycle, CognitiveState
 
-app = FastAPI(title="Wiener-IA API", version="4.3.0")
+app = FastAPI(title="Wiener-IA API", version="4.4.0")
 cycle = CognitiveCycle(CognitiveState())
 
 class ChatRequest(BaseModel):
@@ -16,9 +16,14 @@ class ChatResponse(BaseModel):
 class PerceptionRequest(BaseModel):
     message: str = Field(min_length=1, max_length=12000)
 
+class MemoryRequest(BaseModel):
+    content: str = Field(min_length=1, max_length=12000)
+    importance: float = Field(default=0.5, ge=0, le=1)
+    topics: list[str] = Field(default_factory=list)
+
 @app.get("/health")
 async def health() -> dict[str, object]:
-    return {"ok": True, "service": "Wiener-IA", "version": "4.3.0"}
+    return {"ok": True, "service": "Wiener-IA", "version": "4.4.0"}
 
 @app.get("/api")
 async def api_root() -> dict[str, str]:
@@ -30,13 +35,24 @@ async def status() -> dict[str, object]:
         "service": "Wiener-IA",
         "state": cycle.state.__dict__,
         "internal": cycle.internal.snapshot(),
-        "pipeline": ["perception", "context", "memory", "reasoning", "selection", "action", "reflection", "evolution"],
+        "memory_count": cycle.memory.count(),
+        "pipeline": ["perception", "context", "memory", "reasoning", "planning", "selection", "action", "reflection", "evolution"],
     }
 
 @app.post("/api/perception")
 async def perception(request: PerceptionRequest) -> dict[str, object]:
     result = cycle.perceive(request.message)
     return {"stage": "perception", "perception": result.to_dict(), "internal": cycle.internal.snapshot()}
+
+@app.post("/api/memory")
+async def remember(request: MemoryRequest) -> dict[str, object]:
+    item = cycle.memory.remember(request.content, request.importance, request.topics)
+    return {"stage": "memory", "memory": item.__dict__, "count": cycle.memory.count()}
+
+@app.get("/api/memory")
+async def recent_memory(limit: int = 10) -> dict[str, object]:
+    limit = max(1, min(limit, 100))
+    return {"stage": "memory", "items": [item.__dict__ for item in cycle.memory.recent(limit)]}
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest) -> ChatResponse:
@@ -46,25 +62,31 @@ async def chat(request: ChatRequest) -> ChatResponse:
 
     perceived = cycle.perceive(message)
     cycle.state.context["last_input"] = perceived.to_dict()
-    cycle.begin("répondre à la demande de l'utilisateur", "analyse directe")
-    cycle.act({"type": "prepare_response", "input_length": perceived.length})
+    cycle.begin("répondre à la demande de l'utilisateur", "préparation cognitive")
 
-    reflection = cycle.reflect(perceived.to_dict())
+    cognition = cycle.think(perceived)
+    selected = cognition["decision"]["selected"]
+    cycle.state.current_strategy = selected
+    cycle.act({"type": "prepare_response", "strategy": selected, "plan": cognition["plan"]["steps"]})
+
+    cycle.remember(message, importance=0.4, topics=perceived.topics)
+    reflection = cycle.reflect({"perception": perceived.to_dict(), "cognition": cognition})
     cycle.evolve(reflection)
 
     return ChatResponse(
         text=(
-            "État interne mis à jour. Wiener-IA a perçu l'entrée, défini un objectif, "
-            f"sélectionné la stratégie « {cycle.state.current_strategy} » et enregistré le cycle."
+            f"Cycle cognitif préparé. Stratégie sélectionnée : « {selected} ». "
+            f"Plan : {' → '.join(cognition['plan']['steps'])}."
         ),
-        stage="reflection",
+        stage="selection",
         cognitive={
             "perception": "done",
             "context": "done",
-            "memory": "ready",
-            "reasoning": "ready",
-            "selection": "ready",
-            "action": "done",
+            "memory": "done",
+            "reasoning": "done",
+            "planning": "done",
+            "selection": "done",
+            "action": "ready",
             "reflection": "done",
             "evolution": "done",
         },
