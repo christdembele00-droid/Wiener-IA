@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from cognitive.core import CognitiveCycle, CognitiveState
 
-app = FastAPI(title="Wiener-IA API", version="4.1.0")
+app = FastAPI(title="Wiener-IA API", version="4.2.0")
 cycle = CognitiveCycle(CognitiveState())
 
 class ChatRequest(BaseModel):
@@ -13,9 +13,12 @@ class ChatResponse(BaseModel):
     stage: str
     cognitive: dict[str, str]
 
+class PerceptionRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=12000)
+
 @app.get("/health")
 async def health() -> dict[str, object]:
-    return {"ok": True, "service": "Wiener-IA", "version": "4.1.0"}
+    return {"ok": True, "service": "Wiener-IA", "version": "4.2.0"}
 
 @app.get("/api")
 async def api_root() -> dict[str, str]:
@@ -33,6 +36,11 @@ async def status() -> dict[str, object]:
         "pipeline": ["perception", "context", "memory", "reasoning", "selection", "action", "reflection", "evolution"],
     }
 
+@app.post("/api/perception")
+async def perception(request: PerceptionRequest) -> dict[str, object]:
+    result = cycle.perceive(request.message)
+    return {"stage": "perception", "perception": result.to_dict()}
+
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest) -> ChatResponse:
     message = request.message.strip()
@@ -40,29 +48,29 @@ async def chat(request: ChatRequest) -> ChatResponse:
         raise HTTPException(status_code=400, detail="Message vide.")
 
     perceived = cycle.perceive(message)
-    cycle.state.context["last_input"] = perceived
+    cycle.state.context["last_input"] = perceived.to_dict()
     cycle.state.goal = "répondre à la demande de l'utilisateur"
     cycle.state.current_strategy = "analyse directe"
-    cycle.state.uncertainty = 0.5
+    cycle.state.uncertainty = max(0.5, cycle.state.uncertainty)
 
-    reflection = cycle.reflect(perceived)
+    reflection = cycle.reflect(perceived.to_dict())
     cycle.evolve(reflection)
 
     return ChatResponse(
         text=(
-            "Entrée reçue par le moteur cognitif Wiener-IA. "
-            "Le pipeline perception → contexte → mémoire → raisonnement → sélection → action → réflexion → évolution est actif. "
-            "Le fournisseur de modèle de langage sera branché à l'étape dédiée, sans changer l'identité Wiener-IA."
+            "Perception terminée. Wiener-IA a structuré l'entrée avant traitement : "
+            f"intention={perceived.intent}, langue={perceived.language}, "
+            f"type={perceived.message_type}."
         ),
-        stage="reflection",
+        stage="perception",
         cognitive={
             "perception": "done",
-            "context": "done",
+            "context": "ready",
             "memory": "ready",
             "reasoning": "ready",
             "selection": "ready",
-            "action": "done",
-            "reflection": "done",
-            "evolution": "done",
+            "action": "ready",
+            "reflection": "ready",
+            "evolution": "ready",
         },
     )
