@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Any
 
@@ -40,14 +41,14 @@ class PostgresMemoryRepository:
             conn.execute(text("""
                 INSERT INTO memory_items(session_id, content, importance, topics, metadata)
                 VALUES (:session_id, :content, :importance, CAST(:topics AS JSONB), CAST(:metadata AS JSONB))
-            """), {"session_id": session_id, "content": content, "importance": importance, "topics": __import__("json").dumps(topics), "metadata": __import__("json").dumps(metadata or {})})
+            """), {"session_id": session_id, "content": content, "importance": importance, "topics": json.dumps(topics), "metadata": json.dumps(metadata or {})})
 
     def recall(self, session_id: str, query: str, limit: int = 5) -> list[dict[str, Any]]:
         if not self.engine:
             return []
         terms = [w.lower() for w in query.split() if len(w) > 2][:12]
         if not terms:
-            return []
+            return self.recent(session_id, limit)
         clauses = " OR ".join([f"LOWER(content) LIKE :term{i}" for i in range(len(terms))])
         params = {"session_id": session_id, "limit": limit}
         params.update({f"term{i}": f"%{term}%" for i, term in enumerate(terms)})
@@ -61,10 +62,23 @@ class PostgresMemoryRepository:
             """), params).mappings().all()
         return [dict(row) for row in rows]
 
+    def recent(self, session_id: str, limit: int = 10) -> list[dict[str, Any]]:
+        if not self.engine:
+            return []
+        with self.engine.connect() as conn:
+            rows = conn.execute(text("""
+                SELECT content, importance, topics, metadata
+                FROM memory_items
+                WHERE session_id=:session_id
+                ORDER BY created_at DESC
+                LIMIT :limit
+            """), {"session_id": session_id, "limit": limit}).mappings().all()
+        return [dict(row) for row in rows]
+
     def count(self, session_id: str | None = None) -> int:
         if not self.engine:
             return 0
-        with self.engine.begin() as conn:
+        with self.engine.connect() as conn:
             if session_id:
                 return int(conn.execute(text("SELECT COUNT(*) FROM memory_items WHERE session_id=:session_id"), {"session_id": session_id}).scalar_one())
             return int(conn.execute(text("SELECT COUNT(*) FROM memory_items")).scalar_one())
