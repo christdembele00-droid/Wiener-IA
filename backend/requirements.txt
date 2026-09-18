@@ -8,3 +8,5 @@ psycopg[binary]
 httpx
 firebase-admin
 cloudinary
+python-multipart
+pytest
