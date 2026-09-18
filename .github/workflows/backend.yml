@@ -3,16 +3,27 @@ name: Wiener-IA Backend
 on:
   push:
     branches: [main, wiener-rebuild]
+    paths:
+      - "backend/**"
+      - "cognitive/**"
+      - "database/**"
+      - "services/**"
+      - "tests/**"
+      - ".github/workflows/backend.yml"
   pull_request:
     branches: [main]
 
 jobs:
-  compile:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -r backend/requirements.txt
-      - run: python -m compileall backend cognitive
+      - name: Install dependencies
+        run: pip install -r backend/requirements.txt
+      - name: Compile Python
+        run: python -m compileall backend cognitive database services
+      - name: Run tests
+        run: pytest -q
