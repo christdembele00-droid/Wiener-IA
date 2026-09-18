@@ -1,7 +1,11 @@
 from dataclasses import dataclass, field
 from typing import Any
 
+from cognitive.decision import DecisionEngine
+from cognitive.memory import MemoryStore
 from cognitive.perception import PerceptionProcessor, PerceptionResult
+from cognitive.planning import PlanningEngine
+from cognitive.reasoning import ReasoningEngine
 from cognitive.state import InternalState
 
 @dataclass
@@ -17,6 +21,10 @@ class CognitiveCycle:
     state: CognitiveState
     perception: PerceptionProcessor = field(default_factory=PerceptionProcessor)
     internal: InternalState = field(default_factory=InternalState)
+    memory: MemoryStore = field(default_factory=MemoryStore)
+    reasoning: ReasoningEngine = field(default_factory=ReasoningEngine)
+    planning: PlanningEngine = field(default_factory=PlanningEngine)
+    decision: DecisionEngine = field(default_factory=DecisionEngine)
 
     def perceive(self, input_data: Any) -> PerceptionResult:
         if not isinstance(input_data, str):
@@ -31,6 +39,16 @@ class CognitiveCycle:
         self.state.goal = goal
         self.state.current_strategy = strategy
         self.internal.begin_cycle(goal, strategy)
+
+    def think(self, perceived: PerceptionResult) -> dict[str, Any]:
+        memories = [item.__dict__ for item in self.memory.recall(perceived.normalized_text)]
+        frame = self.reasoning.prepare(perceived.to_dict(), memories)
+        plan = self.planning.build(frame)
+        decision = self.decision.select({"steps": plan.steps}, self.state.uncertainty)
+        return {"frame": frame, "plan": plan.__dict__, "decision": decision.__dict__}
+
+    def remember(self, content: str, importance: float = 0.5, topics: list[str] | None = None) -> None:
+        self.memory.remember(content, importance, topics)
 
     def act(self, action: dict[str, Any]) -> None:
         self.internal.record_action(action)
