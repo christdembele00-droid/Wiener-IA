@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { sendToWiener } from "../lib/api";
 
 type Message = { role: "user" | "assistant"; text: string };
 
@@ -13,19 +14,23 @@ export default function Home() {
 
   const lastStep = useMemo(() => (thinking ? 3 : messages.length ? 5 : 0), [thinking, messages.length]);
 
-  function send() {
+  async function send() {
     const text = input.trim();
     if (!text || thinking) return;
     setInput("");
     setMessages((m) => [...m, { role: "user", text }]);
     setThinking(true);
-    window.setTimeout(() => {
+    try {
+      const result = await sendToWiener(text);
+      setMessages((m) => [...m, { role: "assistant", text: result.text }]);
+    } catch (error) {
       setMessages((m) => [...m, {
         role: "assistant",
-        text: "Je suis Wiener-IA. Le moteur cognitif est prêt à recevoir le backend de raisonnement. Cette interface prépare déjà le cycle perception → contexte → raisonnement → sélection → action → réflexion."
+        text: error instanceof Error ? error.message : "Connexion au moteur Wiener-IA impossible."
       }]);
+    } finally {
       setThinking(false);
-    }, 450);
+    }
   }
 
   return (
@@ -36,12 +41,10 @@ export default function Home() {
         <div className="side-section">
           <span>ÉTAT COGNITIF</span>
           {cognitiveSteps.map((step, i) => (
-            <div className={i === lastStep ? "state active" : "state"} key={step}>
-              <i /> {step}
-            </div>
+            <div className={i === lastStep ? "state active" : "state"} key={step}><i /> {step}</div>
           ))}
         </div>
-        <div className="side-footer">Système v4.0 · interface</div>
+        <div className="side-footer">Système v4.1 · moteur FastAPI</div>
       </aside>
 
       <section className="workspace">
@@ -77,8 +80,8 @@ export default function Home() {
 
         <div className="composer-wrap">
           <div className="composer">
-            <textarea value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }} placeholder="Écris à Wiener-IA…" rows={1} />
-            <button className="send" onClick={send} disabled={!input.trim() || thinking} aria-label="Envoyer">↑</button>
+            <textarea value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }} placeholder="Écris à Wiener-IA…" rows={1} />
+            <button className="send" onClick={() => void send()} disabled={!input.trim() || thinking} aria-label="Envoyer">↑</button>
           </div>
           <small>Entrée pour envoyer · Maj + Entrée pour une nouvelle ligne</small>
         </div>
