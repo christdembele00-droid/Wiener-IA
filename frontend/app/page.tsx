@@ -5,14 +5,14 @@ import { sendToWiener } from "../lib/api";
 
 type Message = { role: "user" | "assistant"; text: string };
 
-const cognitiveSteps = ["Perception", "Contexte", "Mémoire", "Raisonnement", "Sélection", "Action", "Réflexion", "Évolution"];
+const cognitiveSteps = ["Perception", "Contexte", "Mémoire", "Raisonnement", "Planification", "Sélection", "Action", "Réflexion", "Évolution"];
 
 export default function Home() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [thinking, setThinking] = useState(false);
 
-  const lastStep = useMemo(() => (thinking ? 3 : messages.length ? 5 : 0), [thinking, messages.length]);
+  const lastStep = useMemo(() => (thinking ? 4 : messages.length ? 6 : 0), [thinking, messages.length]);
 
   async function send() {
     const text = input.trim();
@@ -24,10 +24,7 @@ export default function Home() {
       const result = await sendToWiener(text);
       setMessages((m) => [...m, { role: "assistant", text: result.text }]);
     } catch (error) {
-      setMessages((m) => [...m, {
-        role: "assistant",
-        text: error instanceof Error ? error.message : "Connexion au moteur Wiener-IA impossible."
-      }]);
+      setMessages((m) => [...m, { role: "assistant", text: error instanceof Error ? error.message : "Connexion au moteur Wiener-IA impossible." }]);
     } finally {
       setThinking(false);
     }
@@ -44,7 +41,7 @@ export default function Home() {
             <div className={i === lastStep ? "state active" : "state"} key={step}><i /> {step}</div>
           ))}
         </div>
-        <div className="side-footer">Système v4.1 · moteur FastAPI</div>
+        <div className="side-footer">Système v5.0 · moteur FastAPI</div>
       </aside>
 
       <section className="workspace">
