@@ -4,6 +4,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from cognitive.core import CognitiveCycle, CognitiveState
+from cognitive.context_engine import ContextEngine
+from cognitive.memory_layers import MemoryLayers
+from cognitive.strategy import StrategyEngine
+from cognitive.tool_policy import ToolPolicy
+from cognitive.verification import VerificationEngine
+from cognitive.knowledge_genome import KnowledgeGenome
 from cognitive.router import ModelProvider
 from database.repository import PostgresMemoryRepository
 from services.authentication.firebase_admin import FirebaseAuthService
@@ -19,6 +25,11 @@ database = PostgresMemoryRepository()
 model_provider = ExternalModelProvider()
 firebase = FirebaseAuthService()
 cloudinary_service = CloudinaryService()
+context_engine = ContextEngine()
+memory_layers = MemoryLayers()
+strategy_engine = StrategyEngine()
+tool_policy = ToolPolicy()
+verification_engine = VerificationEngine()
 connections: list[WebSocket] = []
 
 if model_provider.configured:
@@ -80,7 +91,7 @@ async def integrations() -> dict[str, object]:
 
 @app.get("/api/status")
 async def status() -> dict[str, object]:
-    return {"service": "Wiener-IA", "state": cycle.state.__dict__, "internal": cycle.internal.snapshot(), "memory_count": database.count() if database.configured else cycle.memory.count(), "tools": cycle.tools.list(), "models": cycle.router.snapshot(), "learning": cycle.learning.snapshot(), "evolution": {"generation": cycle.evolution.generation, "strategy_preferences": cycle.evolution.strategy_preferences}, "pipeline": ["perception", "context", "memory", "reasoning", "planning", "selection", "action", "model", "reflection", "learning", "evolution", "inheritance"]}
+    return {"service": "Wiener-IA", "state": cycle.state.__dict__, "internal": cycle.internal.snapshot(), "context_sessions": len(context_engine.frames), "memory_count": database.count() if database.configured else cycle.memory.count(), "tools": cycle.tools.list(), "models": cycle.router.snapshot(), "learning": cycle.learning.snapshot(), "evolution": {"generation": cycle.evolution.generation, "strategy_preferences": cycle.evolution.strategy_preferences}, "pipeline": ["perception", "context", "memory", "reasoning", "planning", "selection", "action", "model", "reflection", "learning", "evolution", "inheritance"]}
 
 @app.post("/api/perception")
 async def perception(request: PerceptionRequest) -> dict[str, object]:
@@ -121,6 +132,11 @@ async def models() -> dict[str, object]:
 @app.get("/api/evolution")
 async def evolution() -> dict[str, object]:
     return {"generation": cycle.evolution.generation, "preferences": cycle.evolution.strategy_preferences, "genome": cycle.inheritance.build({"generation": cycle.evolution.generation, "preferences": cycle.evolution.strategy_preferences}, cycle.state.history).export()}
+
+@app.get("/api/cognition")
+async def cognition_status() -> dict[str, object]:
+    genome = KnowledgeGenome.build(cycle.evolution.generation, cycle.state.history, cycle.evolution.strategy_preferences)
+    return {"context_sessions": len(context_engine.frames), "memory_layers": memory_layers.__dict__, "strategies": {k: v.__dict__ for k, v in strategy_engine.records.items()}, "genome": genome.export(), "tool_policy": sorted(tool_policy.ALLOWED)}
 
 @app.get("/api/metrics")
 async def metrics() -> dict[str, object]:
@@ -172,10 +188,13 @@ async def chat(request: ChatRequest) -> ChatResponse:
 
     await broadcast("cycle_started", {"session_id": request.session_id})
     perceived = cycle.perceive(message)
+    context = context_engine.update(request.session_id, message, perceived.to_dict())
     cycle.state.context["last_input"] = perceived.to_dict()
+    cycle.state.context["context"] = context.__dict__
     cycle.begin("répondre à la demande de l'utilisateur", "préparation cognitive")
     cognition = cycle.think(perceived)
     selected = cognition["decision"]["selected"]
+    selected = strategy_engine.choose([selected, "step_by_step", "clarification"], "high" if len(cognition["plan"]["steps"]) > 2 else "normal")
     cycle.state.current_strategy = selected
     cycle.act({"type": "prepare_response", "strategy": selected, "plan": cognition["plan"]["steps"]})
 
@@ -199,7 +218,11 @@ async def chat(request: ChatRequest) -> ChatResponse:
         provider = "cognitive-prototype"
 
     cycle.act({"type": "response_generated", "provider": provider})
-    learning = cycle.evolve_cycle(cognition, {"response": response_text})
+    verification = verification_engine.verify("user request", response_text, cycle.internal.uncertainty)
+    strategy_engine.learn(selected, verification.confidence)
+    memory_layers.add({"content": message, "topics": perceived.topics}, importance=0.4)
+    memory_layers.consolidate()
+    learning = cycle.evolve_cycle(cognition, {"response": response_text, "verification": verification_engine.snapshot(verification)})
     await broadcast("reflection_ready", {"quality": learning["reflection"]["quality"]})
     await broadcast("evolution_updated", {"generation": learning["evolution"]["generation"]})
 
