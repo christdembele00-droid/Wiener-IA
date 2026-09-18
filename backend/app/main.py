@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from cognitive.core import CognitiveCycle, CognitiveState
 
-app = FastAPI(title="Wiener-IA API", version="4.4.0")
+app = FastAPI(title="Wiener-IA API", version="4.5.0")
 cycle = CognitiveCycle(CognitiveState())
 
 class ChatRequest(BaseModel):
@@ -21,9 +21,13 @@ class MemoryRequest(BaseModel):
     importance: float = Field(default=0.5, ge=0, le=1)
     topics: list[str] = Field(default_factory=list)
 
+class ToolRequest(BaseModel):
+    name: str
+    arguments: dict[str, object] = Field(default_factory=dict)
+
 @app.get("/health")
 async def health() -> dict[str, object]:
-    return {"ok": True, "service": "Wiener-IA", "version": "4.4.0"}
+    return {"ok": True, "service": "Wiener-IA", "version": "4.5.0"}
 
 @app.get("/api")
 async def api_root() -> dict[str, str]:
@@ -36,6 +40,8 @@ async def status() -> dict[str, object]:
         "state": cycle.state.__dict__,
         "internal": cycle.internal.snapshot(),
         "memory_count": cycle.memory.count(),
+        "tools": cycle.tools.list(),
+        "models": cycle.router.snapshot(),
         "pipeline": ["perception", "context", "memory", "reasoning", "planning", "selection", "action", "reflection", "evolution"],
     }
 
@@ -54,6 +60,24 @@ async def recent_memory(limit: int = 10) -> dict[str, object]:
     limit = max(1, min(limit, 100))
     return {"stage": "memory", "items": [item.__dict__ for item in cycle.memory.recent(limit)]}
 
+@app.get("/api/tools")
+async def tools() -> dict[str, object]:
+    return {"tools": cycle.tools.list()}
+
+@app.post("/api/tools/execute")
+async def execute_tool(request: ToolRequest) -> dict[str, object]:
+    try:
+        result = cycle.tools.execute(request.name, **request.arguments)
+        return {"ok": True, "tool": request.name, "result": result}
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Outil inconnu.")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Exécution de l'outil impossible.")
+
+@app.get("/api/models")
+async def models() -> dict[str, object]:
+    return {"providers": cycle.router.snapshot()}
+
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest) -> ChatResponse:
     message = request.message.strip()
@@ -70,24 +94,15 @@ async def chat(request: ChatRequest) -> ChatResponse:
     cycle.act({"type": "prepare_response", "strategy": selected, "plan": cognition["plan"]["steps"]})
 
     cycle.remember(message, importance=0.4, topics=perceived.topics)
-    reflection = cycle.reflect({"perception": perceived.to_dict(), "cognition": cognition})
+    reflection = cycle.reflect({"plan": cognition["plan"], "decision": cognition["decision"], "result": "cycle préparé"})
     cycle.evolve(reflection)
 
     return ChatResponse(
-        text=(
-            f"Cycle cognitif préparé. Stratégie sélectionnée : « {selected} ». "
-            f"Plan : {' → '.join(cognition['plan']['steps'])}."
-        ),
+        text=f"Cycle cognitif préparé. Stratégie : « {selected} ». Plan : {' → '.join(cognition['plan']['steps'])}.",
         stage="selection",
         cognitive={
-            "perception": "done",
-            "context": "done",
-            "memory": "done",
-            "reasoning": "done",
-            "planning": "done",
-            "selection": "done",
-            "action": "ready",
-            "reflection": "done",
-            "evolution": "done",
+            "perception": "done", "context": "done", "memory": "done",
+            "reasoning": "done", "planning": "done", "selection": "done",
+            "action": "ready", "reflection": "done", "evolution": "done",
         },
     )
