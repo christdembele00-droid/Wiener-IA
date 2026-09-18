@@ -4,3 +4,7 @@ pydantic
 pydantic-settings
 sqlalchemy
 asyncpg
+psycopg[binary]
+httpx
+firebase-admin
+cloudinary
