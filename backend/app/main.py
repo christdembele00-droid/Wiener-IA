@@ -4,12 +4,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from cognitive.core import CognitiveCycle, CognitiveState
+from cognitive.router import ModelProvider
 from database.repository import PostgresMemoryRepository
 from services.authentication.firebase_admin import FirebaseAuthService
 from services.model.model_provider import ExternalModelProvider
 from services.storage.cloudinary_service import CloudinaryService
 
-app = FastAPI(title="Wiener-IA API", version="6.0.0")
+app = FastAPI(title="Wiener-IA API", version="6.0.1")
 origins = [origin.strip() for origin in os.getenv("WIENER_ALLOWED_ORIGINS", "*").split(",") if origin.strip()]
 app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=origins != ["*"], allow_methods=["*"], allow_headers=["*"])
 
@@ -19,6 +20,9 @@ model_provider = ExternalModelProvider()
 firebase = FirebaseAuthService()
 cloudinary_service = CloudinaryService()
 connections: list[WebSocket] = []
+
+if model_provider.configured:
+    cycle.router.register(ModelProvider(name="configured-model", capabilities={"chat", "reasoning"}, priority=10))
 
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=12000)
@@ -63,7 +67,7 @@ async def startup() -> None:
 @app.get("/health")
 async def health() -> dict[str, object]:
     db_ok = database.health() if database.configured else False
-    return {"ok": True, "service": "Wiener-IA", "version": "6.0.0", "integrations": {"postgresql": db_ok, "model": model_provider.configured, "firebase": firebase.configured, "cloudinary": cloudinary_service.configured}}
+    return {"ok": True, "service": "Wiener-IA", "version": "6.0.1", "integrations": {"postgresql": db_ok, "model": model_provider.configured, "firebase": firebase.configured, "cloudinary": cloudinary_service.configured}}
 
 @app.get("/api")
 async def api_root() -> dict[str, str]:
@@ -72,7 +76,7 @@ async def api_root() -> dict[str, str]:
 @app.get("/api/integrations")
 async def integrations() -> dict[str, object]:
     db_ok = database.health() if database.configured else False
-    return {"postgresql": {"configured": database.configured, "healthy": db_ok}, "model_router": {"configured": model_provider.configured}, "firebase": {"configured": firebase.configured}, "cloudinary": {"configured": cloudinary_service.configured}}
+    return {"postgresql": {"configured": database.configured, "healthy": db_ok}, "model_router": {"configured": model_provider.configured, "providers": cycle.router.snapshot()}, "firebase": {"configured": firebase.configured}, "cloudinary": {"configured": cloudinary_service.configured}}
 
 @app.get("/api/status")
 async def status() -> dict[str, object]:
@@ -93,7 +97,9 @@ async def remember(request: MemoryRequest) -> dict[str, object]:
 @app.get("/api/memory")
 async def recent_memory(limit: int = 10, session_id: str = "default") -> dict[str, object]:
     limit = max(1, min(limit, 100))
-    return {"stage": "memory", "persistent": database.configured, "items": [item.__dict__ for item in cycle.memory.recent(limit)]}
+    if database.configured:
+        return {"stage": "memory", "persistent": True, "items": database.recent(session_id, limit)}
+    return {"stage": "memory", "persistent": False, "items": [item.__dict__ for item in cycle.memory.recent(limit)]}
 
 @app.get("/api/tools")
 async def tools() -> dict[str, object]:
@@ -157,10 +163,12 @@ async def chat(request: ChatRequest) -> ChatResponse:
         raise HTTPException(status_code=400, detail="Message vide.")
 
     if request.id_token:
+        if not firebase.configured:
+            raise HTTPException(status_code=503, detail="Firebase Authentication non configuré.")
         try:
             firebase.verify_token(request.id_token)
         except Exception as exc:
-            raise HTTPException(status_code=401, detail=str(exc))
+            raise HTTPException(status_code=401, detail=f"Jeton Firebase invalide: {exc}")
 
     await broadcast("cycle_started", {"session_id": request.session_id})
     perceived = cycle.perceive(message)
@@ -172,6 +180,8 @@ async def chat(request: ChatRequest) -> ChatResponse:
     cycle.act({"type": "prepare_response", "strategy": selected, "plan": cognition["plan"]["steps"]})
 
     if database.configured:
+        for memory in database.recall(request.session_id, perceived.normalized_text, 5):
+            cycle.remember(memory["content"], memory.get("importance", 0.5), memory.get("topics") or [])
         database.remember(request.session_id, message, 0.4, perceived.topics)
     cycle.remember(message, importance=0.4, topics=perceived.topics)
 
