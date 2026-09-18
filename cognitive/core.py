@@ -6,7 +6,10 @@ from cognitive.memory import MemoryStore
 from cognitive.perception import PerceptionProcessor, PerceptionResult
 from cognitive.planning import PlanningEngine
 from cognitive.reasoning import ReasoningEngine
+from cognitive.reflection import ReflectionEngine
+from cognitive.router import ModelRouter
 from cognitive.state import InternalState
+from cognitive.tools import ToolRegistry, default_registry
 
 @dataclass
 class CognitiveState:
@@ -25,6 +28,9 @@ class CognitiveCycle:
     reasoning: ReasoningEngine = field(default_factory=ReasoningEngine)
     planning: PlanningEngine = field(default_factory=PlanningEngine)
     decision: DecisionEngine = field(default_factory=DecisionEngine)
+    reflection: ReflectionEngine = field(default_factory=ReflectionEngine)
+    tools: ToolRegistry = field(default_factory=default_registry)
+    router: ModelRouter = field(default_factory=ModelRouter)
 
     def perceive(self, input_data: Any) -> PerceptionResult:
         if not isinstance(input_data, str):
@@ -55,12 +61,17 @@ class CognitiveCycle:
         self.state.context["last_action"] = action
 
     def reflect(self, result: Any) -> dict[str, Any]:
-        reflection = {"result": result, "evaluated": True}
+        reflection = self.reflection.evaluate(
+            self.state.context.get("perception", {}),
+            result.get("plan", {}) if isinstance(result, dict) else {},
+            result.get("decision", {}) if isinstance(result, dict) else {},
+            result,
+        )
         self.state.history.append(reflection)
         self.internal.set_phase("reflection")
         return reflection
 
     def evolve(self, reflection: dict[str, Any]) -> None:
-        if reflection.get("evaluated"):
-            self.state.uncertainty = max(0.0, self.state.uncertainty - 0.05)
-            self.internal.complete_cycle(self.state.uncertainty)
+        if reflection.get("quality") is not None:
+            self.state.uncertainty = max(0.0, min(1.0, self.state.uncertainty + reflection["uncertainty_delta"]))
+        self.internal.complete_cycle(self.state.uncertainty)
