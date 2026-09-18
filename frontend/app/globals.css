@@ -1,0 +1,18 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  background: #f7f7f5;
+  color: #111;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.shell { min-height: 100vh; display: grid; place-items: center; padding: 32px; }
+.hero { width: min(760px, 100%); text-align: center; }
+.mark {
+  width: 56px; height: 56px; margin: 0 auto 28px; display: grid; place-items: center;
+  border: 1px solid #111; border-radius: 16px; font-size: 24px; font-weight: 700;
+}
+.eyebrow { margin: 0 0 10px; font-size: 11px; letter-spacing: .18em; }
+h1 { margin: 0; font-size: clamp(44px, 9vw, 82px); letter-spacing: -.06em; }
+.intro { max-width: 620px; margin: 24px auto; font-size: 18px; line-height: 1.6; color: #555; }
+.status { display: inline-flex; align-items: center; gap: 9px; padding: 10px 14px; border: 1px solid #ddd; border-radius: 999px; background: #fff; font-size: 13px; color: #555; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: #111; }
