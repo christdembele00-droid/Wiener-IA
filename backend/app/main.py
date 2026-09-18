@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from cognitive.core import CognitiveCycle, CognitiveState
 
-app = FastAPI(title="Wiener-IA API", version="4.2.0")
+app = FastAPI(title="Wiener-IA API", version="4.3.0")
 cycle = CognitiveCycle(CognitiveState())
 
 class ChatRequest(BaseModel):
@@ -18,7 +18,7 @@ class PerceptionRequest(BaseModel):
 
 @app.get("/health")
 async def health() -> dict[str, object]:
-    return {"ok": True, "service": "Wiener-IA", "version": "4.2.0"}
+    return {"ok": True, "service": "Wiener-IA", "version": "4.3.0"}
 
 @app.get("/api")
 async def api_root() -> dict[str, str]:
@@ -28,18 +28,15 @@ async def api_root() -> dict[str, str]:
 async def status() -> dict[str, object]:
     return {
         "service": "Wiener-IA",
-        "state": {
-            "goal": cycle.state.goal,
-            "uncertainty": cycle.state.uncertainty,
-            "strategy": cycle.state.current_strategy,
-        },
+        "state": cycle.state.__dict__,
+        "internal": cycle.internal.snapshot(),
         "pipeline": ["perception", "context", "memory", "reasoning", "selection", "action", "reflection", "evolution"],
     }
 
 @app.post("/api/perception")
 async def perception(request: PerceptionRequest) -> dict[str, object]:
     result = cycle.perceive(request.message)
-    return {"stage": "perception", "perception": result.to_dict()}
+    return {"stage": "perception", "perception": result.to_dict(), "internal": cycle.internal.snapshot()}
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest) -> ChatResponse:
@@ -49,28 +46,26 @@ async def chat(request: ChatRequest) -> ChatResponse:
 
     perceived = cycle.perceive(message)
     cycle.state.context["last_input"] = perceived.to_dict()
-    cycle.state.goal = "répondre à la demande de l'utilisateur"
-    cycle.state.current_strategy = "analyse directe"
-    cycle.state.uncertainty = max(0.5, cycle.state.uncertainty)
+    cycle.begin("répondre à la demande de l'utilisateur", "analyse directe")
+    cycle.act({"type": "prepare_response", "input_length": perceived.length})
 
     reflection = cycle.reflect(perceived.to_dict())
     cycle.evolve(reflection)
 
     return ChatResponse(
         text=(
-            "Perception terminée. Wiener-IA a structuré l'entrée avant traitement : "
-            f"intention={perceived.intent}, langue={perceived.language}, "
-            f"type={perceived.message_type}."
+            "État interne mis à jour. Wiener-IA a perçu l'entrée, défini un objectif, "
+            f"sélectionné la stratégie « {cycle.state.current_strategy} » et enregistré le cycle."
         ),
-        stage="perception",
+        stage="reflection",
         cognitive={
             "perception": "done",
-            "context": "ready",
+            "context": "done",
             "memory": "ready",
             "reasoning": "ready",
             "selection": "ready",
-            "action": "ready",
-            "reflection": "ready",
-            "evolution": "ready",
+            "action": "done",
+            "reflection": "done",
+            "evolution": "done",
         },
     )
