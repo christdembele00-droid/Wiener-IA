@@ -26,4 +26,6 @@ jobs:
       - name: Compile Python
         run: python -m compileall backend cognitive database services
       - name: Run tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: pytest -q
