@@ -2,12 +2,16 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from cognitive.decision import DecisionEngine
+from cognitive.evolution import EvolutionEngine
+from cognitive.inheritance import InheritanceEngine
+from cognitive.learning import LearningEngine
 from cognitive.memory import MemoryStore
 from cognitive.perception import PerceptionProcessor, PerceptionResult
 from cognitive.planning import PlanningEngine
 from cognitive.reasoning import ReasoningEngine
 from cognitive.reflection import ReflectionEngine
 from cognitive.router import ModelRouter
+from cognitive.safety import EvolutionSafety
 from cognitive.state import InternalState
 from cognitive.tools import ToolRegistry, default_registry
 
@@ -29,6 +33,10 @@ class CognitiveCycle:
     planning: PlanningEngine = field(default_factory=PlanningEngine)
     decision: DecisionEngine = field(default_factory=DecisionEngine)
     reflection: ReflectionEngine = field(default_factory=ReflectionEngine)
+    learning: LearningEngine = field(default_factory=LearningEngine)
+    evolution: EvolutionEngine = field(default_factory=EvolutionEngine)
+    inheritance: InheritanceEngine = field(default_factory=InheritanceEngine)
+    safety: EvolutionSafety = field(default_factory=EvolutionSafety)
     tools: ToolRegistry = field(default_factory=default_registry)
     router: ModelRouter = field(default_factory=ModelRouter)
 
@@ -70,6 +78,25 @@ class CognitiveCycle:
         self.state.history.append(reflection)
         self.internal.set_phase("reflection")
         return reflection
+
+    def evolve_cycle(self, cognition: dict[str, Any], result: Any = None) -> dict[str, Any]:
+        selected = cognition["decision"]["selected"]
+        reflection = self.reflection.evaluate(
+            self.state.context.get("perception", {}),
+            cognition["plan"],
+            cognition["decision"],
+            result or {"cycle": "prepared"},
+        )
+        learned = self.learning.learn(selected, reflection["quality"])
+        evolution = self.evolution.evolve(self.learning.snapshot())
+        proposal = {"strategy_preferences": evolution["preferences"]}
+        safe_preferences = self.safety.apply(self.evolution.strategy_preferences, proposal)
+        self.evolution.strategy_preferences = safe_preferences
+        genome = self.inheritance.build(evolution, self.state.history)
+        self.state.history.append({"reflection": reflection, "learning": learned.__dict__, "evolution": evolution, "genome": genome.export()})
+        self.state.uncertainty = max(0.0, min(1.0, self.state.uncertainty + reflection["uncertainty_delta"]))
+        self.internal.complete_cycle(self.state.uncertainty)
+        return {"reflection": reflection, "learning": learned.__dict__, "evolution": evolution, "genome": genome.export()}
 
     def evolve(self, reflection: dict[str, Any]) -> None:
         if reflection.get("quality") is not None:
