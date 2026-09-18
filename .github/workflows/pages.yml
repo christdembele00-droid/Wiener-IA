@@ -25,6 +25,9 @@ jobs:
       - name: Install frontend
         working-directory: frontend
         run: npm install
+      - name: Install TypeScript build dependencies
+        working-directory: frontend
+        run: npm install --no-save --save-dev @types/react @types/react-dom @types/node@20.17.6 typescript@5.8.2
       - name: Build static site
         working-directory: frontend
         env:
